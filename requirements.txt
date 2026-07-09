@@ -1,0 +1,17 @@
+# 核心(佐證分析,純 CPU)
+numpy>=1.24
+scipy>=1.10
+pandas>=2.0
+matplotlib>=3.7
+scikit-image>=0.21
+Pillow>=10.0
+
+# Tier 0 推論(本機 CPU 可跑)
+torch>=2.0
+torchxrayvision>=1.2.0
+
+# app
+streamlit>=1.30
+
+# 測試
+pytest>=7.4

@@ -1,0 +1,34 @@
+# datasets — 絕不入庫(授權/體積);資料留 Kaggle 掛載
+data/
+datasets/
+*.dcm
+
+# model weights
+models/
+weights/
+*.pt
+*.pth
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# outputs
+outputs/
+*.log
+
+# large ONNX models — never commit (fp32 262MB / fp16 131MB exceed GitHub 100MB,
+# and int8 won't run in onnxruntime-web). Model is hosted on Hugging Face for deploy.
+ONNX/
+web/model/*.onnx
+web/_check.js
+
+# internal working docs / scratch outputs / notebooks — not published to the repo
+files/
+notebooks/
+report/
+kaggle results/
