@@ -1,65 +1,69 @@
-# CXR-Seg — 胸部 X 光肺野與心臟解剖分割(瀏覽器 demo)
+# CXR-Seg — Chest X-ray Lung & Heart Segmentation (browser demo)
 
-> ⚠️ **非診斷用途,不可用於任何臨床決策。** 這是研究 / 教學技術 demo。
-> **Research / teaching demo — NOT a diagnostic tool, not for any clinical decision.**
+> ⚠️ **Research / teaching demo — NOT a diagnostic tool, and not for any clinical decision.**
 
-**🔗 Live demo:** _(部署後補上 Vercel 網址)_ · **🔒 隱私:影像不上傳,全程於瀏覽器本機運算。**
+**🔗 Live demo: https://pulmo-trace.vercel.app** · **🔒 Privacy: the image never leaves your device — segmentation runs entirely in your browser.**
 
-胸部 X 光的**肺野(左右肺)+ 心臟**解剖分割,並由分割結果計算幾何**心胸比(CTR)**。
-模型為 **零訓練(Tier 0)** 基線,在你的瀏覽器裡以 ONNX Runtime Web 執行。
-這個專案的重點不是「準」,而是 **誠實的佐證**。
+Anatomical segmentation of the **lung fields (left + right) and heart** on a chest X-ray, with a geometric **cardiothoracic ratio (CTR)** computed from the masks. The model is a **zero-training (Tier 0)** baseline that runs in your browser via ONNX Runtime Web.
 
----
-
-## 護城河 = 誠實佐證(不是分數)
-
-多數醫療影像 AI 很少做外部驗證。本專案把該做的做齊:
-
-- **外部驗證(最可信的錨點):** 在**獨立、人工 gold** 的 JSRT 上測 —— 肺 Dice **0.856**、心 Dice **0.918**(zero-training)。
-- **內部基線:** 對 CheXmask **silver** 標註,patient-level 切分 + bootstrap 95% CI(肺 0.835、心 0.851)。
-- **子群/公平性:** PA > AP;結節 vs 非結節無差異。
-- **失敗分析:** 失敗集中在心臟後方/縱膈交界與肋膈角/肺底(非隨機)。
-- **CTR 對 gold 一致性:** MAE 0.028、r 0.90(幾何量測、非診斷)。
-- **silver ≠ gold 誠實揭露、CLAIM 2024 自評、model card。**
-
-📄 佐證文件:[evaluation report](web/evaluation_report.md) · [model card](web/MODEL_CARD.md) · [CLAIM 2024 checklist](web/CLAIM_checklist.md)
+**The point of this project isn't accuracy — it's honest evidence.**
 
 ---
 
-## 隱私 / 架構
+## The moat: honest evidence, not a score
 
-- **影像不離開裝置:** 分割完全在瀏覽器端執行(ONNX Runtime Web + Web Worker),不上傳伺服器、不儲存。
-- 模型:TorchXRayVision 預訓練解剖分割(PSPNet, ChestX-Det),匯出成 ONNX,以 fp32 於 Hugging Face 上託管、由瀏覽器載入。
+Most medical-imaging AI is never externally validated. This project does the rigorous parts:
 
-## 專案結構
+- **External validation (the trustworthy anchor):** tested on **JSRT**, an independent set with **human gold** masks — lung Dice **0.856**, heart Dice **0.918** (zero training).
+- **Internal baseline:** vs CheXmask **silver** labels, with **patient-level** splitting and **bootstrap 95% CIs** (lung 0.835, heart 0.851).
+- **Fairness / subgroups:** PA > AP; no difference between nodule and non-nodule cases.
+- **Failure analysis:** errors are systematic, concentrated at the retrocardiac/mediastinal border and the costophrenic angle — not random.
+- **CTR vs gold:** MAE 0.028, r 0.90 (geometric measurement, non-diagnostic).
+- **Honesty:** silver ≠ gold is disclosed, plus a **CLAIM 2024** self-assessment and a **model card**.
+
+| Setting | Reference | Lung Dice | Heart Dice |
+|---|---|---|---|
+| Internal (NIH, n=200) | CheXmask silver | 0.835 [0.826–0.843] | 0.851 [0.837–0.865] |
+| **External (JSRT, n=246)** | **SCR gold (human)** | **0.856** [0.853–0.858] | **0.918** [0.915–0.923] |
+
+📄 Evidence docs: [evaluation report](web/evaluation_report.md) · [model card](web/MODEL_CARD.md) · [CLAIM 2024 checklist](web/CLAIM_checklist.md)
+
+---
+
+## Privacy / architecture
+
+- **The image never leaves the device:** inference runs fully client-side (ONNX Runtime Web in a Web Worker) — nothing is uploaded or stored.
+- **Model:** TorchXRayVision pretrained anatomical segmentation (PSPNet, ChestX-Det), exported to ONNX (fp32) and hosted on Hugging Face, fetched by the browser at runtime.
+
+## Repository structure
 
 ```
-web/          瀏覽器 demo(index.html + vercel.json)、佐證文件、圖、範例
-src/cxrseg/   研究用 Python:patient-level 切分 / RLE / metrics / CTR / 推論
-tests/        pytest(確定性邏輯 TDD;patient-level 切分回歸測試等)
-CREDITS.md    資料與模型授權   DISCLAIMER.md   免責聲明
+web/          Browser demo (index.html + vercel.json), evidence docs, figures, samples
+src/cxrseg/   Research Python: patient-level split / RLE / metrics / CTR / inference
+tests/        pytest (TDD for deterministic logic; patient-level leakage regression test)
+CREDITS.md    Data & model licenses     DISCLAIMER.md    Non-diagnostic disclaimer
 ```
 
-## 本機執行
+## Run locally
 
 ```bash
-# 網頁 demo(需 http server,不能直接開 file://)
-cd web && python -m http.server 8000   # 開 http://localhost:8000
+# Web demo (needs an http server — file:// won't work)
+cd web && python -m http.server 8000   # open http://localhost:8000
 
-# Python 研究程式碼 + 測試
+# Python research code + tests
 pip install -r requirements.txt
 pytest -q
 ```
 
-## 資料與模型授權
+## Data & model licenses
 
-- **NIH ChestX-ray14**(影像,no restrictions + 標註)· **CheXmask v0.4**(內部 silver mask,**CC BY 4.0**,Gaggion et al. 2024)· **JSRT + SCR**(外部 gold)· **TorchXRayVision**(模型)。
-- 詳見 [`CREDITS.md`](CREDITS.md)。
+- **NIH ChestX-ray14** (images; no restrictions + attribution) · **CheXmask v0.4** (internal silver masks, **CC BY 4.0**, Gaggion et al. 2024) · **JSRT + SCR** (external gold) · **TorchXRayVision** (model, Apache-2.0).
+- See [`CREDITS.md`](CREDITS.md).
 
-## 授權 / License
+## License
 
-- **程式碼:MIT**(見 [`LICENSE`](LICENSE))。
-- 資料集與預訓練模型各自的授權以其原始來源為準(見 `CREDITS.md`)。
+- **Code: MIT** (see [`LICENSE`](LICENSE)).
+- Datasets and the pretrained model are governed by their own licenses — see `CREDITS.md`.
 
 ---
 
