@@ -7,96 +7,154 @@
 <meta name="description" content="Research/teaching demo. Anatomical lung & heart segmentation on chest X-rays, running entirely in your browser. NOT a diagnostic tool." />
 <style>
   :root{
-    --bg:#f4f6f8; --ink:#1c2733; --muted:#647082; --faint:#8a97a6; --line:#e4e8ee;
-    --panel:#ffffff; --panel2:#f2f5f9; --accent:#0d9488; --accent-ink:#0b6b62; --accent2:#0e7490;
-    --viewer:#0b0f14; --viewer-2:#141b23; --viewer-line:#22303c; --viewer-ink:#c6d2de; --viewer-muted:#7f8ea0;
-    --lung:#38bdf8; --heart:#fb7185; --amber-bg:#fbf3e3; --amber-ink:#8a5a12; --amber-line:#ecdcbe;
-    --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+    /* light chrome */
+    --bg:#eef1f5; --ink:#12202e; --muted:#5a6b7d; --faint:#8695a6; --line:#dbe2ea;
+    --panel:#ffffff; --panel2:#f3f6fa; --accent:#0d9488; --accent-ink:#0b6b62; --accent2:#0e7490;
+    /* dark viewer (radiology convention) */
+    --viewer:#070b10; --viewer-2:#111a23; --viewer-3:#0d151d; --viewer-line:#243440; --viewer-ink:#cdd9e5; --viewer-muted:#7d8da0;
+    /* colorblind-aware overlays */
+    --lung:#22d3ee; --lung-ink:#0e7490; --heart:#fb7185; --heart-ink:#be123c;
+    --amber-bg:#fbf3e3; --amber-ink:#8a5a12; --amber-line:#ecdcbe;
+    --shadow:0 1px 2px rgba(16,24,40,.05), 0 10px 30px rgba(16,24,40,.08);
+    --shadow-lg:0 20px 60px rgba(8,15,26,.35);
   }
   *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--ink);
+  html,body{margin:0;background:
+      radial-gradient(1200px 500px at 82% -8%, #e5fbf6 0%, rgba(229,251,246,0) 55%),
+      radial-gradient(900px 460px at 8% -6%, #e7f2fb 0%, rgba(231,242,251,0) 55%),
+      var(--bg);
+    color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC",Helvetica,Arial,sans-serif;
     line-height:1.6;-webkit-font-smoothing:antialiased}
   a{color:var(--accent2);text-decoration:none} a:hover{text-decoration:underline}
-  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
 
-  .appbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(8px);
+  /* ── app bar ─────────────────────────────── */
+  .appbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(10px);
     border-bottom:1px solid var(--line)}
-  .appbar .in{max-width:1120px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:12px}
+  .appbar .in{max-width:1180px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:12px}
   .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.01em}
-  .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#0891b2);
-    display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
+  .mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#0891b2);
+    display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:15px;box-shadow:0 2px 8px rgba(13,148,136,.35)}
   .chip{font-size:11.5px;font-weight:700;color:var(--amber-ink);background:var(--amber-bg);border:1px solid var(--amber-line);
     border-radius:999px;padding:3px 10px;letter-spacing:.01em}
   .navsp{flex:1}
-  .navlink{font-size:13.5px;color:var(--muted);font-weight:600} .navlink:hover{color:var(--accent-ink);text-decoration:none}
+  .navlink{font-size:13.5px;color:var(--muted);font-weight:600;padding:6px 8px} .navlink:hover{color:var(--accent-ink);text-decoration:none}
+  @media(max-width:720px){.navlink.hideSm{display:none}}
   .langtoggle{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;
     padding:6px 13px;font-size:13px;font-weight:700;cursor:pointer}
   .langtoggle:hover{border-color:var(--accent);color:var(--accent-ink)}
 
-  .hero{padding:40px 0 24px}
+  /* ── hero ────────────────────────────────── */
+  .hero{padding:44px 0 22px}
   .tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
     color:var(--accent-ink);font-weight:700;margin-bottom:14px}
   .tag::before{content:"";width:22px;height:1.5px;background:var(--accent);border-radius:2px}
-  h1{font-size:32px;margin:0 0 10px;line-height:1.18;letter-spacing:-.02em;font-weight:800}
-  h1 .sub{color:var(--muted);font-weight:500;font-size:18px;letter-spacing:0}
-  .lede{color:#465464;max-width:720px;font-size:16px;margin:0}
-  .privacy{margin-top:14px;display:inline-flex;gap:9px;align-items:center;background:var(--panel);
-    border:1px solid var(--line);border-radius:11px;padding:9px 14px;font-size:13.5px;box-shadow:var(--shadow)}
-  .privacy b{color:var(--accent-ink)}
+  h1{font-size:35px;margin:0 0 12px;line-height:1.16;letter-spacing:-.022em;font-weight:800}
+  h1 .sub{color:var(--muted);font-weight:500;font-size:19px;letter-spacing:0}
+  .lede{color:#42505f;max-width:740px;font-size:16.5px;margin:0}
+  .herobadges{margin-top:16px;display:flex;gap:9px;flex-wrap:wrap}
+  .badge{display:inline-flex;gap:8px;align-items:center;background:var(--panel);
+    border:1px solid var(--line);border-radius:11px;padding:8px 13px;font-size:13px;box-shadow:var(--shadow)}
+  .badge b{color:var(--accent-ink)}
+  .badge.gold b{color:#8a5a12}
 
-  /* workstation */
-  .ws{display:grid;grid-template-columns:1.5fr 1fr;gap:0;border:1px solid var(--line);border-radius:18px;
+  /* ── workstation ─────────────────────────── */
+  .ws{display:grid;grid-template-columns:1.55fr 1fr;gap:0;border:1px solid var(--line);border-radius:20px;
     overflow:hidden;box-shadow:var(--shadow);background:var(--panel);margin:18px 0 8px}
-  @media(max-width:880px){.ws{grid-template-columns:1fr}}
-  .viewer{background:var(--viewer);padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
-  .vtools{display:flex;align-items:center;gap:8px;color:var(--viewer-muted);font-size:12.5px}
+  @media(max-width:900px){.ws{grid-template-columns:1fr}}
+  .viewer{background:linear-gradient(180deg,var(--viewer-3),var(--viewer));padding:12px;display:flex;gap:10px;min-width:0}
+  /* left rail */
+  .rail{display:flex;flex-direction:column;gap:6px;padding-top:2px}
+  .tool{width:38px;height:38px;border-radius:10px;background:var(--viewer-2);color:var(--viewer-ink);
+    border:1px solid var(--viewer-line);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .tool:hover{border-color:var(--accent);color:#7fe6d6} .tool.on{background:#0e2b2a;border-color:var(--accent);color:#7fe6d6}
+  .tool svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .railsp{flex:1}
+  .vmain{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .vtop{display:flex;align-items:center;gap:8px;color:var(--viewer-muted);font-size:12.5px}
   .vname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .vbtn{background:var(--viewer-2);color:var(--viewer-ink);border:1px solid var(--viewer-line);border-radius:8px;
-    padding:5px 10px;font-size:12px;cursor:pointer;display:inline-flex;gap:5px;align-items:center}
-  .vbtn:hover{border-color:var(--accent)} .vbtn.on{background:#0e2b2a;border-color:var(--accent);color:#7fe6d6}
-  .stage{position:relative;background:#000;border-radius:12px;border:1px solid var(--viewer-line);overflow:hidden;
-    display:flex;align-items:center;justify-content:center;aspect-ratio:1/1}
-  canvas{max-width:100%;max-height:100%;display:block}
-  .stage .empty{position:absolute;color:var(--viewer-muted);font-size:13px;text-align:center;padding:20px;pointer-events:none}
+  .vtag{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#7fe6d6;border:1px solid var(--viewer-line);
+    border-radius:999px;padding:2px 8px}
+  .stagewrap{position:relative;background:#000;border-radius:14px;border:1px solid var(--viewer-line);overflow:hidden;
+    aspect-ratio:1/1;display:flex;align-items:center;justify-content:center}
+  .stage{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:grab}
+  .stage.grabbing{cursor:grabbing}
+  canvas{max-width:100%;max-height:100%;display:block;transform-origin:center center;image-rendering:auto}
+  .empty{position:absolute;inset:0;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;
+    color:var(--viewer-muted);font-size:13px;text-align:center;padding:24px;pointer-events:none}
+  .empty .big{font-size:30px;opacity:.5}
+  .drop-hl{position:absolute;inset:8px;border:2px dashed var(--accent);border-radius:12px;background:rgba(13,148,136,.08);
+    display:none;pointer-events:none}
+  .stagewrap.drag .drop-hl{display:block}
+  /* legend + scalebar over canvas */
+  .legend{position:absolute;left:10px;bottom:10px;display:flex;gap:12px;background:rgba(7,11,16,.72);
+    border:1px solid var(--viewer-line);border-radius:9px;padding:6px 10px;font-size:11.5px;color:var(--viewer-ink);
+    backdrop-filter:blur(4px)}
+  .legend.hide{display:none}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .zpill{position:absolute;right:10px;top:10px;background:rgba(7,11,16,.72);border:1px solid var(--viewer-line);
+    color:var(--viewer-ink);border-radius:8px;font-size:11px;padding:3px 8px;font-variant-numeric:tabular-nums}
   .filmstrip{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
-  .thumb{flex:0 0 auto;width:60px;height:60px;border-radius:9px;border:1px solid var(--viewer-line);background:var(--viewer-2);
+  .thumb{flex:0 0 auto;width:58px;height:58px;border-radius:10px;border:1px solid var(--viewer-line);background:var(--viewer-2);
     color:var(--viewer-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;overflow:hidden;padding:0}
   .thumb:hover{border-color:var(--accent)} .thumb img{width:100%;height:100%;object-fit:cover}
-  .thumb.up{flex-direction:column;gap:2px;font-size:20px}
-  .vnote{font-size:11px;color:var(--viewer-muted);margin-top:-4px}
+  .thumb.up{flex-direction:column;gap:2px;font-size:19px}
+  .vnote{font-size:11px;color:var(--viewer-muted)}
 
-  .panel{padding:18px 18px 20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+  /* ── panel ───────────────────────────────── */
+  .panel{padding:18px 18px 20px;display:flex;flex-direction:column;gap:15px;min-width:0}
   .runrow{display:flex;gap:10px;align-items:center}
-  .btn{background:var(--accent);color:#fff;border:none;border-radius:11px;padding:11px 18px;font-weight:700;
-    cursor:pointer;font-size:14px;box-shadow:0 1px 2px rgba(13,148,136,.25)}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:12px 18px;font-weight:700;
+    cursor:pointer;font-size:14px;box-shadow:0 1px 2px rgba(13,148,136,.25);flex:1;display:inline-flex;gap:8px;align-items:center;justify-content:center}
   .btn:hover{background:var(--accent-ink)} .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
-  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none;font-weight:600}
-  .progress{height:7px;background:var(--panel2);border-radius:999px;overflow:hidden;display:none}
-  .progress>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .2s}
+  .btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none;font-weight:600;flex:0 0 auto}
+  .progress{height:8px;background:var(--panel2);border-radius:999px;overflow:hidden;display:none}
+  .progress>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .18s}
   .status{font-size:12.5px;color:var(--muted);min-height:16px}
 
   .results{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:15px}
   .gauge-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
   .gauge-h .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-  .gauge-h .v{font-size:26px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-  .gtrack{position:relative;height:10px;background:#e2e8f0;border-radius:999px;margin:4px 0 4px}
-  .gfill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#5eead4,var(--accent));border-radius:999px;width:0}
-  .gref{position:absolute;top:-3px;bottom:-3px;width:2px;background:#94a3b8;left:66.7%}
-  .gmark{position:absolute;top:-4px;width:12px;height:18px;border-radius:4px;background:#fff;border:2px solid var(--accent-ink);
-    transform:translateX(-50%);left:0}
+  .gauge-h .v{font-size:27px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .gauge-h .v small{font-size:12px;font-weight:600;color:var(--muted);margin-left:5px}
+  .gtrack{position:relative;height:11px;background:linear-gradient(90deg,#5eead4,#fbbf24 66%,#fb7185);border-radius:999px;margin:6px 0 4px;opacity:.85}
+  .gref{position:absolute;top:-3px;bottom:-3px;width:2px;background:#334155;left:66.7%}
+  .gmark{position:absolute;top:-4px;width:13px;height:19px;border-radius:4px;background:#fff;border:2px solid var(--accent-ink);
+    transform:translateX(-50%);left:0;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .25s}
   .glabels{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
   .glabels .mid{position:relative;left:16.7%}
-  .rrow{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:7px 0;border-top:1px solid var(--line)}
+  .rrow{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:8px 0;border-top:1px solid var(--line)}
   .swatch{width:12px;height:12px;border-radius:3px}
   .rrow .rk{flex:1;color:var(--ink)} .rrow .rv{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
-  .conf{font-size:12px;color:var(--muted);margin-top:8px}
+  /* confidence bars */
+  .confbox{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .confttl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .cbar{display:flex;align-items:center;gap:9px;margin:6px 0;font-size:12px}
+  .cbar .cl{min-width:26px;color:var(--muted)}
+  .cbar .ct{flex:1;height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+  .cbar .cf{height:100%;width:0;border-radius:999px;transition:width .3s}
+  .cbar .cv{min-width:34px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+  .confhint{font-size:11px;color:var(--faint);margin-top:6px}
+  .adqbadge{font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap}
+  .adqbadge.ok{color:var(--accent-ink);background:#e1f5ee;border:1px solid #5dcaa5}
+  .adqbadge.warn{color:var(--amber-ink);background:var(--amber-bg);border:1px solid var(--amber-line)}
+  .cmpgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:640px){.cmpgrid{grid-template-columns:1fr}}
+  .cmphd{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:600}
+  .cmpcanvaswrap{position:relative;background:#000;border-radius:12px;border:1px solid var(--line);overflow:hidden;aspect-ratio:1/1;cursor:pointer}
+  .cmpcanvaswrap canvas{width:100%;height:100%;display:block}
+  .cmpcanvaswrap:hover{border-color:var(--accent)}
+  .cmpempty{position:absolute;inset:0;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;color:var(--faint);font-size:13px;pointer-events:none;text-align:center;padding:14px}
+  td .dup{color:#a15c14;font-weight:700} td .ddown{color:var(--accent-ink);font-weight:700}
 
   .controls{border:1px solid var(--line);border-radius:14px;padding:14px}
-  .ctitle{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
-  .crow{display:flex;align-items:center;gap:10px;margin-bottom:11px;font-size:13px}
-  .crow .cl{color:var(--muted);min-width:82px}
-  input[type=range]{flex:1;accent-color:var(--accent)}
+  .ctitle{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;justify-content:space-between}
+  .crow{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px}
+  .crow:last-child{margin-bottom:0}
+  .crow .cl{color:var(--muted);min-width:74px}
+  input[type=range]{flex:1;accent-color:var(--accent);height:4px}
   .chipset{display:flex;gap:6px;flex-wrap:wrap}
   .tgl{font-size:12.5px;border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:8px;
     padding:6px 11px;cursor:pointer;font-weight:600;display:inline-flex;gap:6px;align-items:center}
@@ -105,36 +163,78 @@
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
   .seg button{border:none;background:#fff;color:var(--muted);font-size:12.5px;padding:6px 12px;cursor:pointer;font-weight:600}
   .seg button.on{background:var(--accent);color:#fff}
-  .ctrnote{font-size:12px;color:#a15c14;margin-top:2px}
+  .ctrnote{font-size:11.5px;color:#a15c14;margin-top:2px;line-height:1.5}
 
-  section{padding:38px 0;border-top:1px solid var(--line)}
+  /* ── sections ────────────────────────────── */
+  section{padding:40px 0;border-top:1px solid var(--line)}
   .wrap>section{counter-increment:sec}
-  h2{font-size:22px;margin:0 0 6px;letter-spacing:-.01em;font-weight:750}
+  h2{font-size:23px;margin:0 0 6px;letter-spacing:-.01em;font-weight:750}
   section>h2::before{content:counter(sec,decimal-leading-zero);display:block;font-size:12px;letter-spacing:.16em;
     color:var(--accent);font-weight:700;margin-bottom:10px}
   .wrap{counter-reset:sec}
-  .h2note{color:var(--muted);font-size:14.5px;margin:0 0 18px;max-width:760px}
+  .h2note{color:var(--muted);font-size:14.5px;margin:0 0 18px;max-width:780px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
   @media(max-width:820px){.grid{grid-template-columns:1fr}}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
   table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
-  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line)}
   th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
   td{font-variant-numeric:tabular-nums} td b{color:var(--accent2)}
+  tr.hl td{background:#f0fdfa}
   .pill{font-size:11.5px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;white-space:nowrap}
+  .pill.gold{color:#8a5a12;background:var(--amber-bg);border-color:var(--amber-line)}
   .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
   @media(max-width:820px){.cols3{grid-template-columns:1fr}}
-  .v2{font-size:21px;font-weight:800;margin:4px 0;font-variant-numeric:tabular-nums}
-  .disc{background:#fbf1ec;border:1px solid #f0d6c8;color:#8a4b2f;border-radius:12px;padding:15px 17px;font-size:13px;margin-top:16px}
+  .v2{font-size:22px;font-weight:800;margin:4px 0;font-variant-numeric:tabular-nums}
+  .kmini{color:var(--muted);font-size:12px}
+  .disc{background:#fbf1ec;border:1px solid #f0d6c8;color:#8a4b2f;border-radius:12px;padding:15px 17px;font-size:13px;margin-top:18px}
   img.gallery{width:100%;border-radius:14px;border:1px solid var(--line);box-shadow:var(--shadow)}
-  .foot{color:var(--muted);font-size:13px;padding:24px 0 60px;border-top:1px solid var(--line);margin-top:6px}
+  /* references */
+  .refs{list-style:none;padding:0;margin:8px 0 0;counter-reset:ref}
+  .refs li{counter-increment:ref;position:relative;padding:11px 0 11px 34px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .refs li::before{content:counter(ref);position:absolute;left:0;top:11px;width:22px;height:22px;border-radius:6px;
+    background:var(--panel2);border:1px solid var(--line);color:var(--accent-ink);font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center}
+  .refs .rt{font-weight:600;color:var(--ink)} .refs .rm{color:var(--muted)}
+  .foot{color:var(--muted);font-size:13px;padding:26px 0 64px;border-top:1px solid var(--line);margin-top:6px}
+
+  /* ── onboarding modal ────────────────────── */
+  .modal{position:fixed;inset:0;z-index:100;background:rgba(8,15,26,.55);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;padding:20px}
+  .modal.show{display:flex}
+  .mcard{background:var(--panel);border-radius:18px;max-width:520px;width:100%;box-shadow:var(--shadow-lg);
+    padding:26px 26px 22px;border:1px solid var(--line)}
+  .mcard .mh{display:flex;align-items:center;gap:11px;margin-bottom:6px}
+  .mcard h3{margin:0;font-size:20px;font-weight:800}
+  .mcard p{font-size:13.5px;color:#42505f;margin:10px 0}
+  .mcard .mlist{font-size:13px;color:var(--muted);margin:12px 0;padding-left:18px}
+  .mcard .mlist li{margin:6px 0}
+  .mwarn{background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber-ink);border-radius:11px;
+    padding:11px 13px;font-size:12.5px;margin:14px 0}
+  .mact{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
 </style>
 </head>
 <body>
 
+<!-- onboarding / disclaimer modal -->
+<div class="modal" id="modal"><div class="mcard">
+  <div class="mh"><span class="mark">◧</span><h3 data-i18n="mo_h">CXR-Seg</h3></div>
+  <p data-i18n="mo_p">在瀏覽器裡對胸部 X 光做肺野與心臟解剖分割,並計算幾何心胸比(CTR)。模型與推論全部在你的裝置上執行。</p>
+  <ul class="mlist">
+    <li data-i18n="mo_l1">🔒 影像不會上傳 — 全程本機瀏覽器運算</li>
+    <li data-i18n="mo_l2">🧪 零訓練(Tier 0)基線,以公開研究資料集為基礎</li>
+    <li data-i18n="mo_l3">📄 所有數據皆附外部驗證與來源引用</li>
+  </ul>
+  <div class="mwarn" data-i18n="mo_warn">⚠️ 這是研究 / 教學 demo,<b>不是醫療器材,不得用於任何診斷或臨床決策</b>。它不偵測任何疾病。</div>
+  <div class="mact"><button class="btn" id="modalok" style="flex:0 0 auto" data-i18n="mo_ok">我了解,開始使用</button></div>
+</div></div>
+
 <header class="appbar"><div class="in">
   <div class="brand"><span class="mark">◧</span> CXR-Seg <span class="chip" data-i18n="chip">非臨床使用</span></div>
   <div class="navsp"></div>
+  <a class="navlink hideSm" href="#compare" data-i18n="nav_cmp">比較</a>
+  <a class="navlink hideSm" href="#evidence" data-i18n="nav_ev">佐證</a>
+  <a class="navlink hideSm" href="#sources" data-i18n="nav_src">來源</a>
   <a class="navlink" href="https://github.com/WayneChou-bot/PulmoTrace" id="ghlink">GitHub</a>
   <button class="langtoggle" id="langtoggle">EN</button>
 </div></header>
@@ -145,7 +245,11 @@
     <span class="tag" data-i18n="tag">瀏覽器 Demo · 零訓練基線</span>
     <h1 data-i18n="h1">CXR-Seg <span class="sub">— 胸部 X 光肺野 &amp; 心臟解剖分割</span></h1>
     <p class="lede" data-i18n="lede">在瀏覽器裡對胸部 X 光做肺野與心臟分割,並由分割結果計算幾何心胸比(CTR)。</p>
-    <div class="privacy">🔒 <span data-i18n="privacy"><b>影像留在你的裝置上</b>:分割全在瀏覽器本機運算,不會上傳到任何伺服器。</span></div>
+    <div class="herobadges">
+      <div class="badge">🔒 <span data-i18n="b_priv"><b>影像留在你的裝置</b> · 不上傳</span></div>
+      <div class="badge gold">🏥 <span data-i18n="b_ext">外部驗證 <b>JSRT gold</b> · 肺 0.856 / 心 0.918</span></div>
+      <div class="badge">⚡ <span data-i18n="b_cache">模型快取後,再次載入近乎即時</span></div>
+    </div>
   </div>
 
   <!-- WORKSTATION -->
@@ -153,44 +257,92 @@
     <div class="ws">
       <!-- viewer -->
       <div class="viewer">
-        <div class="vtools">
-          <span class="vname" id="vname" data-i18n="v_none">尚未載入影像</span>
-          <button class="vbtn" id="invert" data-i18n="v_invert">反相</button>
-          <button class="vbtn" id="reset" data-i18n="v_reset">重設</button>
+        <!-- left tool rail -->
+        <div class="rail">
+          <button class="tool" id="tInvert" title="Invert" data-tip="v_invert">
+            <svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="9"/></svg></button>
+          <button class="tool" id="tMeasure" title="CTR lines" data-tip="v_measure">
+            <svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M6 9v6"/><path d="M18 9v6"/><path d="M9 10v4"/><path d="M15 10v4"/></svg></button>
+          <button class="tool" id="tZin" title="Zoom in">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6M20 20l-3.5-3.5"/></svg></button>
+          <button class="tool" id="tZout" title="Zoom out">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-3.5-3.5"/></svg></button>
+          <div class="railsp"></div>
+          <button class="tool" id="tReset" title="Reset view">
+            <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/></svg></button>
         </div>
-        <div class="stage">
-          <canvas id="view" width="512" height="512"></canvas>
-          <div class="empty" id="empty" data-i18n="v_empty">拖放胸片到這裡,或用下方範例</div>
+        <!-- main -->
+        <div class="vmain">
+          <div class="vtop">
+            <span class="vname" id="vname" data-i18n="v_none">尚未載入影像</span>
+            <span class="vtag" id="vstate" style="display:none">READY</span>
+          </div>
+          <div class="stagewrap" id="stagewrap">
+            <div class="stage" id="stage">
+              <canvas id="view" width="512" height="512"></canvas>
+            </div>
+            <div class="empty" id="empty"><span class="big">⊞</span><span data-i18n="v_empty">拖放胸片到這裡,或用下方範例</span></div>
+            <div class="drop-hl"></div>
+            <div class="zpill" id="zpill" style="display:none">100%</div>
+            <div class="legend hide" id="legend">
+              <span><i style="background:var(--lung)"></i><span data-i18n="lg_lung">肺</span></span>
+              <span><i style="background:var(--heart)"></i><span data-i18n="lg_heart">心</span></span>
+            </div>
+          </div>
+          <div class="filmstrip">
+            <button class="thumb up" id="uptile"><span>＋</span><span style="font-size:10px" data-i18n="v_up">上傳</span>
+              <input id="file" type="file" accept="image/*" hidden /></button>
+            <span id="thumbslot" style="display:contents"></span>
+          </div>
+          <div class="vnote" data-i18n="v_samplenote">範例僅供試用,不代表準確度;真實準度見下方外部驗證。</div>
         </div>
-        <div class="filmstrip">
-          <button class="thumb up" id="uptile"><span>＋</span><span style="font-size:10px" data-i18n="v_up">上傳</span>
-            <input id="file" type="file" accept="image/*" hidden /></button>
-          <span id="thumbslot" style="display:contents"></span>
-        </div>
-        <div class="vnote" data-i18n="v_samplenote">範例僅供試用,不代表準確度;真實準度見下方外部驗證。</div>
       </div>
       <!-- panel -->
       <div class="panel">
         <div class="runrow">
-          <button id="run" class="btn" disabled data-i18n="run">執行分割</button>
-          <button id="download" class="btn ghost" disabled data-i18n="ctl_download">下載遮罩</button>
+          <button id="run" class="btn" disabled>
+            <svg viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg><span data-i18n="run_l">執行分割</span></button>
+          <button id="download" class="btn ghost" disabled data-i18n="ctl_download">下載</button>
         </div>
         <div class="progress" id="prog"><div id="progbar"></div></div>
         <div class="status" id="status"></div>
 
         <div class="results">
           <div class="gauge-h"><span class="k" data-i18n="m_ctr">心胸比 CTR(幾何)</span><span class="v" id="ctr">—</span></div>
-          <div class="gtrack"><div class="gfill" id="gfill"></div><div class="gref"></div><div class="gmark" id="gmark"></div></div>
-          <div class="glabels"><span>0</span><span class="mid">0.5</span><span>0.75+</span></div>
-          <div class="rrow"><span class="swatch" style="background:var(--lung)"></span><span class="rk" data-i18n="r_lung">肺野面積</span><span class="rv" id="lungpx">—</span></div>
-          <div class="rrow"><span class="swatch" style="background:var(--heart)"></span><span class="rk" data-i18n="r_heart">心臟面積</span><span class="rv" id="heartpx">—</span></div>
-          <div class="conf" id="conf" data-i18n="r_confhint">執行後顯示模型信心(遮罩內平均機率)。</div>
+          <div class="gtrack"><div class="gref"></div><div class="gmark" id="gmark"></div></div>
+          <div class="glabels"><span>0</span><span class="mid">0.50</span><span>0.75+</span></div>
+          <div class="rrow"><span class="swatch" style="background:var(--lung)"></span><span class="rk" data-i18n="r_lung">肺野面積(占影像)</span><span class="rv" id="lungpx">—</span></div>
+          <div class="rrow"><span class="swatch" style="background:var(--heart)"></span><span class="rk" data-i18n="r_heart">心臟面積(占影像)</span><span class="rv" id="heartpx">—</span></div>
+          <div class="confbox">
+            <div class="confttl" data-i18n="c_ttl">模型信心(遮罩內平均機率)</div>
+            <div class="cbar"><span class="cl" data-i18n="c_lung">肺</span><div class="ct"><div class="cf" id="cfL" style="background:var(--lung)"></div></div><span class="cv" id="cvL">—</span></div>
+            <div class="cbar"><span class="cl" data-i18n="c_heart">心</span><div class="ct"><div class="cf" id="cfH" style="background:var(--heart)"></div></div><span class="cv" id="cvH">—</span></div>
+            <div class="confhint" data-i18n="c_hint">越低代表模型越不確定。</div>
+          </div>
+        </div>
+
+        <div class="results" id="biopanel" style="display:none">
+          <div class="confttl" style="margin-bottom:10px;display:flex;justify-content:space-between">
+            <span data-i18n="bio_ttl">幾何量測(全部非診斷)</span></div>
+          <div class="rrow" style="border-top:none"><span class="rk" data-i18n="bio_areactr">面積 CTR(心/胸面積)</span><span class="rv" id="bAreaCTR">—</span></div>
+          <div class="rrow"><span class="rk" data-i18n="bio_sym">左右肺對稱</span><span class="rv" id="bSym">—</span></div>
+          <div class="rrow"><span class="rk" data-i18n="bio_cover">肺野縱向覆蓋</span><span class="rv" id="bCover">—</span></div>
+          <div class="rrow"><span class="rk" data-i18n="bio_center">縱膈置中偏移</span><span class="rv" id="bCenter">—</span></div>
+          <div class="confbox">
+            <div class="confttl" data-i18n="adq_ttl">拍攝適足性(幾何代理指標)</div>
+            <div id="adqlist"></div>
+            <div class="confhint" data-i18n="adq_hint">僅為幾何代理,非正式拍攝品質評估;CTR 只在適足的 PA 立位片上有意義。</div>
+          </div>
         </div>
 
         <div class="controls">
-          <div class="ctitle" data-i18n="ctl_title">顯示控制</div>
+          <div class="ctitle"><span data-i18n="ctl_title">顯示控制</span></div>
           <div class="crow"><span class="cl" data-i18n="ctl_opacity">疊圖濃度</span>
             <input type="range" id="opacity" min="0" max="100" value="55" step="1" /></div>
+          <div class="crow"><span class="cl" data-i18n="ctl_bright">亮度</span>
+            <input type="range" id="bright" min="-100" max="100" value="0" step="1" /></div>
+          <div class="crow"><span class="cl" data-i18n="ctl_contrast">對比</span>
+            <input type="range" id="contrast" min="-100" max="100" value="0" step="1" /></div>
           <div class="crow"><span class="cl" data-i18n="ctl_show">顯示</span>
             <div class="chipset">
               <button class="tgl on" id="tLung"><span class="sw" style="background:var(--lung)"></span><span data-i18n="ctl_lung">肺</span></button>
@@ -199,31 +351,67 @@
           <div class="crow"><span class="cl" data-i18n="ctl_style">樣式</span>
             <div class="seg"><button id="mFill" class="on" data-i18n="ctl_fill">填滿</button><button id="mContour" data-i18n="ctl_contour">輪廓</button></div></div>
           <div class="crow"><span class="cl" data-i18n="ctl_map">機率</span>
-            <button class="tgl" id="tHeat"><span data-i18n="ctl_heat">熱圖</span></button></div>
-          <div class="ctrnote" data-i18n="ctrnote">CTR 為幾何量測、非診斷。0.5 是 PA 片參考;AP/portable 會放大心影。</div>
+            <div class="chipset">
+              <button class="tgl" id="tHeat"><span data-i18n="ctl_heat">熱圖</span></button>
+              <button class="tgl" id="tUnc"><span data-i18n="ctl_unc">不確定帶</span></button>
+            </div></div>
+          <div class="ctrnote" data-i18n="ctrnote">CTR 為幾何量測、非診斷。0.50 是 PA 片參考;AP/portable 會放大心影。</div>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- COMPARE (longitudinal) -->
+  <section id="compare">
+    <h2 data-i18n="cmp_h2">縱向比較(前後片)</h2>
+    <p class="h2note" data-i18n="cmp_note">臨床上單一 CTR 的意義有限,真正重要的是「隨時間的變化」。載入同一位對象的舊片與新片,比較幾何量測的區間變化(interval change)。非診斷。</p>
+    <div class="card">
+      <div class="cmpgrid">
+        <div>
+          <div class="cmphd"><span data-i18n="cmp_prior">舊片 Prior</span><span class="pill" id="cmpPT" style="display:none">CTR —</span></div>
+          <div class="cmpcanvaswrap" id="cmpPriorWrap"><canvas id="cmpPrior" width="512" height="512"></canvas>
+            <div class="cmpempty" id="cmpPriorEmpty"><span style="font-size:22px;opacity:.5">＋</span><span data-i18n="cmp_drop">拖放或點擊上傳</span></div>
+            <input id="cmpPriorFile" type="file" accept="image/*" hidden/></div>
+        </div>
+        <div>
+          <div class="cmphd"><span data-i18n="cmp_cur">新片 Current</span><span class="pill" id="cmpCT" style="display:none">CTR —</span></div>
+          <div class="cmpcanvaswrap" id="cmpCurWrap"><canvas id="cmpCur" width="512" height="512"></canvas>
+            <div class="cmpempty" id="cmpCurEmpty"><span style="font-size:22px;opacity:.5">＋</span><span data-i18n="cmp_drop">拖放或點擊上傳</span></div>
+            <input id="cmpCurFile" type="file" accept="image/*" hidden/></div>
+        </div>
+      </div>
+      <div class="runrow" style="margin-top:14px">
+        <button id="cmpRun" class="btn" disabled style="flex:0 0 auto" data-i18n="cmp_run">比較兩張</button>
+        <span class="status" id="cmpStatus" style="flex:1"></span>
+      </div>
+      <table id="cmpTable" style="display:none;margin-top:6px">
+        <tr><th data-i18n="cmp_metric">量測</th><th data-i18n="cmp_priorc">舊片</th><th data-i18n="cmp_curc">新片</th><th data-i18n="cmp_delta">變化 Δ</th></tr>
+        <tr><td data-i18n="cmp_ctr">CTR(寬度)</td><td id="dPCTR">—</td><td id="dCCTR">—</td><td id="dDCTR">—</td></tr>
+        <tr><td data-i18n="cmp_harea">心臟面積(占影像)</td><td id="dPH">—</td><td id="dCH">—</td><td id="dDH">—</td></tr>
+        <tr><td data-i18n="cmp_larea">肺野面積(占影像)</td><td id="dPL">—</td><td id="dCL">—</td><td id="dDL">—</td></tr>
+      </table>
+      <div class="ctrnote" data-i18n="cmp_caveat">區間變化為幾何量測、非診斷。兩張應為可比較的同體位(PA)影像;體位/吸氣差異會造成假性變化。</div>
+    </div>
+  </section>
+
   <!-- EVIDENCE -->
-  <section>
+  <section id="evidence">
     <h2 data-i18n="ev_h2">這到底多準?(誠實佐證)</h2>
     <p class="h2note" data-i18n="ev_note">內部是與 <b>CheXmask silver</b>(另一模型自動標註)比對;外部是與 <b>JSRT gold</b>(人工標註)比對。人工 gold 更接近真實準度,我們以它作為主要錨點。</p>
     <table>
-      <tr><th data-i18n="th_set">設定</th><th data-i18n="th_ref">參考標準</th><th>肺 Dice</th><th>心 Dice</th></tr>
+      <tr><th data-i18n="th_set">設定</th><th data-i18n="th_ref">參考標準</th><th data-i18n="th_lung">肺 Dice</th><th data-i18n="th_heart">心 Dice</th></tr>
       <tr><td data-i18n="row_int">內部(NIH, n=200)</td><td>CheXmask <span class="pill">silver</span></td><td>0.835 <span style="color:var(--muted)">[0.826–0.843]</span></td><td>0.851 <span style="color:var(--muted)">[0.837–0.865]</span></td></tr>
-      <tr><td data-i18n="row_ext"><b>外部(JSRT, n=246)</b></td><td>SCR <span class="pill" data-i18n="pill_gold">gold 人工</span></td><td><b>0.856</b> <span style="color:var(--muted)">[0.853–0.858]</span></td><td><b>0.918</b> <span style="color:var(--muted)">[0.915–0.923]</span></td></tr>
+      <tr class="hl"><td data-i18n="row_ext"><b>外部(JSRT, n=246)</b></td><td>SCR <span class="pill gold" data-i18n="pill_gold">gold 人工</span></td><td><b>0.856</b> <span style="color:var(--muted)">[0.853–0.858]</span></td><td><b>0.918</b> <span style="color:var(--muted)">[0.915–0.923]</span></td></tr>
     </table>
     <div class="cols3" style="margin-top:16px">
-      <div class="card"><div style="color:var(--muted);font-size:12px" data-i18n="c1_k">CTR vs 人工 gold</div>
+      <div class="card"><div class="kmini" data-i18n="c1_k">CTR vs 人工 gold</div>
         <div class="v2">MAE 0.028 · r 0.90</div>
-        <div style="font-size:13px;color:var(--muted)" data-i18n="c1_d">預測 CTR 略低估 −0.026(幾何、非診斷)</div></div>
-      <div class="card"><div style="color:var(--muted);font-size:12px" data-i18n="c2_k">子群(公平性)</div>
-        <div class="v2" style="font-size:16px" data-i18n="c2_d1">PA 0.863 &gt; AP 0.804(肺)</div>
-        <div style="font-size:13px;color:var(--muted)" data-i18n="c2_d2">結節 vs 非結節:無差異</div></div>
-      <div class="card"><div style="color:var(--muted);font-size:12px" data-i18n="c3_k">泛化的邊界</div>
-        <div style="font-size:13px;color:var(--muted)" data-i18n="c3_d">JSRT 是條件較好的 PA 標準片(單一機構、影像乾淨),分數會偏樂觀;換成 portable/AP 等較困難的影像,通常會下降。</div></div>
+        <div class="kmini" data-i18n="c1_d">預測 CTR 略低估 −0.026(幾何、非診斷)</div></div>
+      <div class="card"><div class="kmini" data-i18n="c2_k">子群(公平性)</div>
+        <div class="v2" style="font-size:17px" data-i18n="c2_d1">PA 0.863 &gt; AP 0.804(肺)</div>
+        <div class="kmini" data-i18n="c2_d2">結節 vs 非結節:無差異</div></div>
+      <div class="card"><div class="kmini" data-i18n="c3_k">泛化的邊界</div>
+        <div class="kmini" style="margin-top:4px" data-i18n="c3_d">JSRT 是條件較好的 PA 標準片(單一機構、影像乾淨),分數會偏樂觀;換成 portable/AP 等較困難的影像,通常會下降。</div></div>
     </div>
   </section>
 
@@ -231,14 +419,14 @@
   <section>
     <h2 data-i18n="f_h2">失敗分析</h2>
     <p class="h2note" data-i18n="f_note">失敗不是隨機的:集中在<b>心臟後方/縱膈交界</b>與<b>肋膈角/肺底</b>。心臟輪廓大多吻合。</p>
-    <img class="gallery" src="assets/failure_gallery.png" alt="failure gallery" onerror="this.style.display='none'"/>
+    <img class="gallery" src="assets/failure_gallery.png" alt="failure gallery" loading="lazy" onerror="this.style.display='none'"/>
   </section>
 
   <!-- ABOUT -->
   <section>
     <h2 data-i18n="a_h2">資料 · 模型 · 授權</h2>
     <div class="grid">
-      <div class="card" style="font-size:14px" data-i18n="a_card1"><b>模型</b>:TorchXRayVision 預訓練解剖分割(PSPNet, ChestX-Det),<b>零微調</b>(Tier 0),匯出成 ONNX 於瀏覽器執行。<br/><br/><b>資料</b>:NIH ChestX-ray14 · CheXmask v0.4 <span class="pill">CC BY 4.0</span> · JSRT + SCR(外部 gold)。</div>
+      <div class="card" style="font-size:14px" data-i18n="a_card1"><b>模型</b>:TorchXRayVision 預訓練解剖分割(PSPNet, 訓練於 ChestX-Det),<b>零微調</b>(Tier 0),匯出成 ONNX 於瀏覽器執行。<br/><br/><b>資料</b>:NIH ChestX-ray14 · CheXmask v0.4 <span class="pill">CC BY 4.0</span> · JSRT + SCR(外部 gold)。</div>
       <div class="card" style="font-size:14px">
         <b data-i18n="a_docs">更多佐證文件</b><br/>
         · <a href="MODEL_CARD.md" data-i18n="a_mc">Model card</a><br/>
@@ -250,6 +438,22 @@
     <div class="disc" data-i18n="disc"><b>免責聲明</b>:研究 / 教學技術 demo,<b>非診斷工具,不可用於任何臨床決策</b>。不偵測任何疾病;CTR 為幾何量測非診斷;內部參考為模型自動生成的 silver 標註;效能不保證泛化。請勿用於實際醫療照護。</div>
   </section>
 
+  <!-- SOURCES / CITATIONS -->
+  <section id="sources">
+    <h2 data-i18n="s_h2">來源與引用</h2>
+    <p class="h2note" data-i18n="s_note">本 demo 使用的模型、資料集與臨床參考的原始出處。醫療領域的每一項數字都應可追溯到來源。</p>
+    <ol class="refs">
+      <li><span class="rt">TorchXRayVision</span> — Cohen JP, et al. <span class="rm">A library of chest X-ray datasets and models. MIDL 2022.</span> <a href="https://arxiv.org/abs/2111.00595" target="_blank" rel="noopener">arXiv:2111.00595</a> · <a href="https://github.com/mlmed/torchxrayvision" target="_blank" rel="noopener">repo</a></li>
+      <li><span class="rt">ChestX-Det + PSPNet 分割模型</span> — Lian J, et al. <span class="rm">A Structure-Aware Relation Network for Thoracic Diseases. IEEE TMI 2021.</span> <a href="https://arxiv.org/abs/2104.10326" target="_blank" rel="noopener">arXiv:2104.10326</a> · <a href="https://github.com/Deepwise-AILab/ChestX-Det-Dataset" target="_blank" rel="noopener">dataset</a></li>
+      <li><span class="rt">CheXmask v0.4(內部 silver 參考)</span> — Gaggion N, et al. <span class="rm">CheXmask: a large-scale dataset of anatomical segmentation masks. Scientific Data 2024;11:511. CC BY 4.0.</span> <a href="https://www.nature.com/articles/s41597-024-03358-1" target="_blank" rel="noopener">Nature</a> · <a href="https://physionet.org/content/chexmask-cxr-segmentation-data/1.0.0/" target="_blank" rel="noopener">PhysioNet</a></li>
+      <li><span class="rt">JSRT 資料庫</span> — Shiraishi J, et al. <span class="rm">Development of a digital image database for chest radiographs. AJR 2000;174:71–74.</span> <a href="https://www.ajronline.org/doi/10.2214/ajr.174.1.1740071" target="_blank" rel="noopener">AJR</a> · <a href="http://db.jsrt.or.jp/eng.php" target="_blank" rel="noopener">db.jsrt.or.jp</a></li>
+      <li><span class="rt">SCR gold 遮罩(外部參考)</span> — van Ginneken B, et al. <span class="rm">Segmentation of anatomical structures in chest radiographs. Medical Image Analysis 2006;10:19–40.</span> <a href="https://zenodo.org/records/7056076" target="_blank" rel="noopener">SCR data</a></li>
+      <li><span class="rt">NIH ChestX-ray14(影像來源)</span> — Wang X, et al. <span class="rm">ChestX-ray8: Hospital-scale Chest X-ray Database. CVPR 2017.</span> <a href="https://arxiv.org/abs/1705.02315" target="_blank" rel="noopener">arXiv:1705.02315</a></li>
+      <li><span class="rt">心胸比參考範圍</span> — <span class="rm">PA 片正常約 0.42–0.50,&gt;0.50 通常視為異常;不應在 AP 片量測。</span> <a href="https://radiopaedia.org/articles/cardiothoracic-ratio" target="_blank" rel="noopener">Radiopaedia</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8125954/" target="_blank" rel="noopener">Truszkiewicz 2021 (PMC)</a></li>
+      <li><span class="rt">CLAIM 2024 檢核表</span> — Tejani AS, et al. <span class="rm">Checklist for Artificial Intelligence in Medical Imaging (CLAIM): 2024 Update. Radiology: AI 2024.</span> <a href="https://pubs.rsna.org/doi/full/10.1148/ryai.240300" target="_blank" rel="noopener">RSNA</a></li>
+    </ol>
+  </section>
+
   <div class="foot" data-i18n="foot">CXR-Seg · 研究/教學 demo · <b>非臨床使用</b> · 影像不上傳,全程於本機瀏覽器運算 · CheXmask 引用 Gaggion et al. (2024, CC BY 4.0)。</div>
 
 </div>
@@ -258,30 +462,57 @@
 <script>
 const I18N = {
   chip:{zh:"非臨床使用",en:"Not for clinical use"},
+  nav_ev:{zh:"佐證",en:"Evidence"}, nav_src:{zh:"來源",en:"Sources"},
   tag:{zh:"瀏覽器 Demo · 零訓練基線",en:"Browser demo · zero-training baseline"},
   h1:{zh:'CXR-Seg <span class="sub">— 胸部 X 光肺野 &amp; 心臟解剖分割</span>',en:'CXR-Seg <span class="sub">— chest X-ray lung &amp; heart segmentation</span>'},
   lede:{zh:'在瀏覽器裡對胸部 X 光做肺野與心臟分割,並由分割結果計算幾何心胸比(CTR)。',en:"Segment the lungs and heart on a chest X-ray and compute a geometric cardiothoracic ratio (CTR) — all in your browser."},
-  privacy:{zh:"<b>影像留在你的裝置上</b>:分割全在瀏覽器本機運算,不會上傳到任何伺服器。",en:"<b>Your image stays on your device</b> — segmentation runs locally in the browser and is never sent to a server."},
+  b_priv:{zh:"<b>影像留在你的裝置</b> · 不上傳",en:"<b>Image stays on your device</b> · never uploaded"},
+  b_ext:{zh:'外部驗證 <b>JSRT gold</b> · 肺 0.856 / 心 0.918',en:'External <b>JSRT gold</b> · lung 0.856 / heart 0.918'},
+  b_cache:{zh:"模型快取後,再次載入近乎即時",en:"Model is cached — near-instant on repeat visits"},
   v_none:{zh:"尚未載入影像",en:"No image loaded"},
-  v_invert:{zh:"反相",en:"Invert"}, v_reset:{zh:"重設",en:"Reset"},
+  v_invert:{zh:"反相",en:"Invert"}, v_measure:{zh:"CTR 量測線",en:"CTR lines"},
   v_empty:{zh:"拖放胸片到這裡,或用下方範例",en:"Drop a film here, or use a sample below"},
   v_up:{zh:"上傳",en:"Upload"},
   v_samplenote:{zh:"範例僅供試用,不代表準確度;真實準度見下方外部驗證。",en:"Samples are just to try the tool — not accuracy evidence; see external validation below."},
-  run:{zh:"執行分割",en:"Run segmentation"},
-  ctl_download:{zh:"下載遮罩",en:"Download"},
+  lg_lung:{zh:"肺",en:"Lung"}, lg_heart:{zh:"心",en:"Heart"},
+  run_l:{zh:"執行分割",en:"Run segmentation"},
+  ctl_download:{zh:"下載",en:"Save"},
   m_ctr:{zh:"心胸比 CTR(幾何)",en:"CTR (geometric)"},
   r_lung:{zh:"肺野面積(占影像)",en:"Lung area (of image)"},
   r_heart:{zh:"心臟面積(占影像)",en:"Heart area (of image)"},
-  r_confhint:{zh:"執行後顯示模型信心(遮罩內平均機率)。",en:"Model confidence (mean prob in mask) shown after running."},
+  c_ttl:{zh:"模型信心(遮罩內平均機率)",en:"Model confidence (mean prob in mask)"},
+  c_lung:{zh:"肺",en:"Lung"}, c_heart:{zh:"心",en:"Heart"},
+  c_hint:{zh:"越低代表模型越不確定。",en:"Lower = the model is less certain."},
+  bio_ttl:{zh:"幾何量測(全部非診斷)",en:"Geometric measurements (all non-diagnostic)"},
+  bio_areactr:{zh:"面積 CTR(心/胸面積)",en:"Area CTR (heart/thorax area)"},
+  bio_sym:{zh:"左右肺對稱",en:"L/R lung symmetry"},
+  bio_cover:{zh:"肺野縱向覆蓋",en:"Lung field vertical coverage"},
+  bio_center:{zh:"縱膈置中偏移",en:"Mediastinum centering offset"},
+  adq_ttl:{zh:"拍攝適足性(幾何代理指標)",en:"Positioning adequacy (geometric proxies)"},
+  adq_hint:{zh:"僅為幾何代理,非正式拍攝品質評估;CTR 只在適足的 PA 立位片上有意義。",en:"Geometric proxies only, not a formal adequacy assessment; CTR is only meaningful on an adequate erect PA film."},
+  adq_sym:{zh:"左右對稱(旋轉)",en:"L/R symmetry (rotation)"},
+  adq_cover:{zh:"吸氣 / 覆蓋充足",en:"Inspiration / coverage"},
+  adq_center:{zh:"縱膈置中",en:"Mediastinum centered"},
+  adq_ok:{zh:"通過",en:"OK"}, adq_rev:{zh:"建議檢視",en:"Review"},
+  nav_cmp:{zh:"比較",en:"Compare"},
+  cmp_h2:{zh:"縱向比較(前後片)",en:"Longitudinal comparison (prior vs current)"},
+  cmp_note:{zh:'臨床上單一 CTR 的意義有限,真正重要的是「隨時間的變化」。載入同一位對象的舊片與新片,比較幾何量測的區間變化(interval change)。非診斷。',en:"A single CTR says little; what matters clinically is change over time. Load the same subject's prior and current films to compare the geometric interval change. Non-diagnostic."},
+  cmp_prior:{zh:"舊片 Prior",en:"Prior"}, cmp_cur:{zh:"新片 Current",en:"Current"},
+  cmp_drop:{zh:"拖放或點擊上傳",en:"Drop or click to upload"},
+  cmp_run:{zh:"比較兩張",en:"Compare both"},
+  cmp_metric:{zh:"量測",en:"Measurement"}, cmp_priorc:{zh:"舊片",en:"Prior"}, cmp_curc:{zh:"新片",en:"Current"}, cmp_delta:{zh:"變化 Δ",en:"Change Δ"},
+  cmp_ctr:{zh:"CTR(寬度)",en:"CTR (width)"}, cmp_harea:{zh:"心臟面積(占影像)",en:"Heart area (of image)"}, cmp_larea:{zh:"肺野面積(占影像)",en:"Lung area (of image)"},
+  cmp_caveat:{zh:"區間變化為幾何量測、非診斷。兩張應為可比較的同體位(PA)影像;體位/吸氣差異會造成假性變化。",en:"Interval change is geometric, not diagnostic. Both films should be comparable same-view (PA) images; differences in positioning/inspiration cause spurious change."},
   ctl_title:{zh:"顯示控制",en:"Display controls"},
-  ctl_opacity:{zh:"疊圖濃度",en:"Overlay opacity"},
+  ctl_opacity:{zh:"疊圖濃度",en:"Overlay"},
+  ctl_bright:{zh:"亮度",en:"Brightness"}, ctl_contrast:{zh:"對比",en:"Contrast"},
   ctl_show:{zh:"顯示",en:"Show"}, ctl_lung:{zh:"肺",en:"Lung"}, ctl_heart:{zh:"心",en:"Heart"},
   ctl_style:{zh:"樣式",en:"Style"}, ctl_fill:{zh:"填滿",en:"Fill"}, ctl_contour:{zh:"輪廓",en:"Contour"},
-  ctl_map:{zh:"機率",en:"Prob."}, ctl_heat:{zh:"熱圖",en:"Heatmap"},
-  ctrnote:{zh:"CTR 為幾何量測、非診斷。0.5 是 PA 片參考;AP/portable 會放大心影。",en:"CTR is geometric, not diagnostic. 0.5 is a PA reference; AP/portable magnify the heart."},
+  ctl_map:{zh:"機率",en:"Prob."}, ctl_heat:{zh:"熱圖",en:"Heatmap"}, ctl_unc:{zh:"不確定帶",en:"Uncertainty"},
+  ctrnote:{zh:"CTR 為幾何量測、非診斷。0.50 是 PA 片參考;AP/portable 會放大心影。",en:"CTR is geometric, not diagnostic. 0.50 is a PA reference; AP/portable magnify the heart."},
   ev_h2:{zh:"這到底多準?(誠實佐證)",en:"How good is it really? (honest evidence)"},
   ev_note:{zh:'內部是與 <b>CheXmask silver</b>(另一模型自動標註)比對;外部是與 <b>JSRT gold</b>(人工標註)比對。人工 gold 更接近真實準度,我們以它作為主要錨點。',en:"Internal = agreement with <b>CheXmask silver</b> (another model's auto labels); external = <b>JSRT gold</b> (human labels). Human gold is closer to true accuracy, so we use it as the main anchor."},
-  th_set:{zh:"設定",en:"Setting"}, th_ref:{zh:"參考標準",en:"Reference"},
+  th_set:{zh:"設定",en:"Setting"}, th_ref:{zh:"參考標準",en:"Reference"}, th_lung:{zh:"肺 Dice",en:"Lung Dice"}, th_heart:{zh:"心 Dice",en:"Heart Dice"},
   row_int:{zh:"內部(NIH, n=200)",en:"Internal (NIH, n=200)"},
   row_ext:{zh:"<b>外部(JSRT, n=246)</b>",en:"<b>External (JSRT, n=246)</b>"},
   pill_gold:{zh:"gold 人工",en:"gold (human)"},
@@ -295,40 +526,54 @@ const I18N = {
   f_h2:{zh:"失敗分析",en:"Failure analysis"},
   f_note:{zh:'失敗不是隨機的:集中在<b>心臟後方/縱膈交界</b>與<b>肋膈角/肺底</b>。心臟輪廓大多吻合。',en:"Failures aren't random: they cluster at the <b>retrocardiac / mediastinal border</b> and the <b>costophrenic angle / lung base</b>. Heart contours mostly agree."},
   a_h2:{zh:"資料 · 模型 · 授權",en:"Data · Model · License"},
-  a_card1:{zh:'<b>模型</b>:TorchXRayVision 預訓練解剖分割(PSPNet, ChestX-Det),<b>零微調</b>(Tier 0),匯出成 ONNX 於瀏覽器執行。<br/><br/><b>資料</b>:NIH ChestX-ray14 · CheXmask v0.4 <span class="pill">CC BY 4.0</span> · JSRT + SCR(外部 gold)。',en:'<b>Model</b>: TorchXRayVision pretrained anatomical segmentation (PSPNet, ChestX-Det), <b>zero fine-tuning</b> (Tier 0), exported to ONNX and run in-browser.<br/><br/><b>Data</b>: NIH ChestX-ray14 · CheXmask v0.4 <span class="pill">CC BY 4.0</span> · JSRT + SCR (external gold).'},
+  a_card1:{zh:'<b>模型</b>:TorchXRayVision 預訓練解剖分割(PSPNet, 訓練於 ChestX-Det),<b>零微調</b>(Tier 0),匯出成 ONNX 於瀏覽器執行。<br/><br/><b>資料</b>:NIH ChestX-ray14 · CheXmask v0.4 <span class="pill">CC BY 4.0</span> · JSRT + SCR(外部 gold)。',en:'<b>Model</b>: TorchXRayVision pretrained anatomical segmentation (PSPNet, trained on ChestX-Det), <b>zero fine-tuning</b> (Tier 0), exported to ONNX and run in-browser.<br/><br/><b>Data</b>: NIH ChestX-ray14 · CheXmask v0.4 <span class="pill">CC BY 4.0</span> · JSRT + SCR (external gold).'},
   a_docs:{zh:"更多佐證文件",en:"More evidence docs"},
   a_mc:{zh:"Model card",en:"Model card"}, a_report:{zh:"Evaluation report",en:"Evaluation report"}, a_src:{zh:"原始碼(GitHub)",en:"Source code (GitHub)"},
   disc:{zh:'<b>免責聲明</b>:研究 / 教學技術 demo,<b>非診斷工具,不可用於任何臨床決策</b>。不偵測任何疾病;CTR 為幾何量測非診斷;內部參考為模型自動生成的 silver 標註;效能不保證泛化。請勿用於實際醫療照護。',en:"<b>Disclaimer</b>: research / teaching demo, <b>not a diagnostic tool and not for any clinical decision</b>. It detects no disease; CTR is geometric, not a diagnosis; the internal reference is model-generated silver labels; performance is not guaranteed to generalize. Do not use in real medical care."},
-  foot:{zh:'CXR-Seg · 研究/教學 demo · <b>非臨床使用</b> · 影像不上傳,全程於本機瀏覽器運算 · CheXmask 引用 Gaggion et al. (2024, CC BY 4.0)。',en:'CXR-Seg · research/teaching demo · <b>NOT for clinical use</b> · runs locally, images are not uploaded · CheXmask cite Gaggion et al. (2024, CC BY 4.0).'}
+  s_h2:{zh:"來源與引用",en:"Sources & citations"},
+  s_note:{zh:"本 demo 使用的模型、資料集與臨床參考的原始出處。醫療領域的每一項數字都應可追溯到來源。",en:"Original sources for every model, dataset and clinical reference used here. In medicine, every number should trace back to a source."},
+  foot:{zh:'CXR-Seg · 研究/教學 demo · <b>非臨床使用</b> · 影像不上傳,全程於本機瀏覽器運算 · CheXmask 引用 Gaggion et al. (2024, CC BY 4.0)。',en:'CXR-Seg · research/teaching demo · <b>NOT for clinical use</b> · runs locally, images are not uploaded · CheXmask cite Gaggion et al. (2024, CC BY 4.0).'},
+  mo_h:{zh:"CXR-Seg",en:"CXR-Seg"},
+  mo_p:{zh:"在瀏覽器裡對胸部 X 光做肺野與心臟解剖分割,並計算幾何心胸比(CTR)。模型與推論全部在你的裝置上執行。",en:"Anatomical lung & heart segmentation on chest X-rays, with a geometric cardiothoracic ratio (CTR) — the model and inference run entirely on your device."},
+  mo_l1:{zh:"🔒 影像不會上傳 — 全程本機瀏覽器運算",en:"🔒 Images are never uploaded — everything runs in your browser"},
+  mo_l2:{zh:"🧪 零訓練(Tier 0)基線,以公開研究資料集為基礎",en:"🧪 Zero-training (Tier 0) baseline built on public research datasets"},
+  mo_l3:{zh:"📄 所有數據皆附外部驗證與來源引用",en:"📄 Every figure comes with external validation and cited sources"},
+  mo_warn:{zh:"⚠️ 這是研究 / 教學 demo,<b>不是醫療器材,不得用於任何診斷或臨床決策</b>。它不偵測任何疾病。",en:"⚠️ This is a research / teaching demo. <b>It is not a medical device and must not be used for any diagnosis or clinical decision.</b> It detects no disease."},
+  mo_ok:{zh:"我了解,開始使用",en:"I understand — start"}
 };
 const STR={
   loaded:{zh:"已載入,按「執行分割」",en:'Loaded — press “Run segmentation”'},
   pick:{zh:"請先選一張影像",en:"Choose an image first"},
   init:{zh:"初始化模型…",en:"Initializing model…"},
+  cache:{zh:"從快取載入模型…",en:"Loading model from cache…"},
+  fallback:{zh:"fp16 無法取得,改用 fp32…",en:"fp16 unavailable — falling back to fp32…"},
+  cmpwait:{zh:"分割兩張中…(本機運算)",en:"Segmenting both… (on-device)"},
+  cmpdone:{zh:"完成 · 幾何區間變化 · 非診斷",en:"Done · geometric interval change · non-diagnostic"},
   running:{zh:"分割中…(本機運算,可能數秒)",en:"Segmenting… (on-device, may take seconds)"},
   failRun:{zh:"推論失敗:",en:"Inference failed: "}, failImg:{zh:"載入影像失敗",en:"Failed to load image"},
   dl:{zh:(a,b)=>`下載模型 ${a}/${b} MB…`,en:(a,b)=>`Downloading model ${a}/${b} MB…`},
-  done:{zh:s=>`完成 · ${s}s · 非診斷`,en:s=>`Done · ${s}s · non-diagnostic`},
-  conf:{zh:(l,h)=>`模型信心:肺 ${l}% · 心 ${h}%(遮罩內平均機率;越低越不確定)`,en:(l,h)=>`Confidence: lung ${l}% · heart ${h}% (mean prob in mask; lower = less certain)`}
+  done:{zh:s=>`完成 · ${s}s · 非診斷`,en:s=>`Done · ${s}s · non-diagnostic`}
 };
 let lang=localStorage.getItem('lang')||'zh';
 function applyLang(l){lang=l;localStorage.setItem('lang',l);document.documentElement.lang=(l==='zh'?'zh-Hant':'en');
   document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(I18N[k])el.innerHTML=I18N[k][l];});
-  document.getElementById('langtoggle').textContent=(l==='zh'?'EN':'中文'); if(hasResult) updateConf();}
+  document.getElementById('langtoggle').textContent=(l==='zh'?'EN':'中文'); if(hasResult){updateConf();updateBiomarkers();}}
 
-const MODEL_URL="https://huggingface.co/ShihHua/cxr-seg-pspnet/resolve/main/pspnet_lunghearts_fp32.onnx", SIZE=512, TH=0.5, N=SIZE*SIZE;
+const MODEL_URL_FP16="https://huggingface.co/ShihHua/cxr-seg-pspnet/resolve/main/pspnet_lunghearts_fp16.onnx";
+const MODEL_URL_FP32="https://huggingface.co/ShihHua/cxr-seg-pspnet/resolve/main/pspnet_lunghearts_fp32.onnx";
+const CACHE_NAME="cxrseg-model-v2", SIZE=512, TH=0.5, N=SIZE*SIZE;
 const els=id=>document.getElementById(id);
-let session=null, srcImg=null, baseData=null, lungP=null, heartP=null, hasResult=false;
-let ui={op:.55, lung:true, heart:true, mode:'fill', heat:false, invert:false};
-ort.env.wasm.simd=true; ort.env.wasm.proxy=true;  // run inference in a Web Worker → UI never freezes
+let session=null, srcImg=null, baseData=null, lungP=null, heartP=null, leftP=null, rightP=null, hasResult=false;
+let meas=null;
+let ui={op:.55, bright:0, contrast:0, lung:true, heart:true, mode:'fill', heat:false, unc:false, invert:false, measure:false, zoom:1, panx:0, pany:0};
+ort.env.wasm.simd=true; ort.env.wasm.proxy=true;
 ort.env.wasm.numThreads=(self.crossOriginIsolated?Math.min(4,navigator.hardwareConcurrency||1):1);
 const setStatus=t=>els('status').textContent=t;
 
 function loadImageToBase(img){
   const c=els('view'),ctx=c.getContext('2d');
   ctx.fillStyle='#000';ctx.fillRect(0,0,SIZE,SIZE);
-  const s=Math.min(SIZE/img.width,SIZE/img.height),w=img.width*s,h=img.height*s;
-  ctx.drawImage(img,(SIZE-w)/2,(SIZE-h)/2,w,h);
+  ctx.drawImage(img,0,0,SIZE,SIZE);  // stretch to 512² — matches the eval pipeline (xrv XRayResizer), so browser CTR/masks correspond to the reported metrics
   baseData=ctx.getImageData(0,0,SIZE,SIZE);
 }
 function preprocess(){const x=new Float32Array(N),d=baseData.data;
@@ -339,59 +584,135 @@ function bin(p){const m=new Uint8Array(N);for(let i=0;i<N;i++)m[i]=p[i]>TH?1:0;r
 function boundary(m){const b=new Uint8Array(N);for(let i=0;i<N;i++){if(!m[i])continue;
   const r=i/SIZE|0,c=i%SIZE;
   if(r===0||c===0||r===SIZE-1||c===SIZE-1||!m[i-1]||!m[i+1]||!m[i-SIZE]||!m[i+SIZE])b[i]=1;}return b;}
-function widthOf(m){let best=0;for(let r=0;r<SIZE;r++){let lo=-1,hi=-1;const o=r*SIZE;
-  for(let c=0;c<SIZE;c++)if(m[o+c]){if(lo<0)lo=c;hi=c;}if(lo>=0)best=Math.max(best,hi-lo+1);}return best;}
+function widthInfo(m){let best=0,br=0,blo=0,bhi=0;for(let r=0;r<SIZE;r++){let lo=-1,hi=-1;const o=r*SIZE;
+  for(let c=0;c<SIZE;c++)if(m[o+c]){if(lo<0)lo=c;hi=c;}
+  if(lo>=0&&hi-lo+1>best){best=hi-lo+1;br=r;blo=lo;bhi=hi;}}return{w:best,row:br,lo:blo,hi:bhi};}
 
+function applyBC(v){
+  const c=(ui.contrast/100)*1.6, f=(259*(c*255+255))/(255*(259-c*255));
+  return f*(v-128)+128+ui.bright*1.28;
+}
 function render(){
   if(!baseData)return;
-  const ctx=els('view').getContext('2d');
+  const cv=els('view'),ctx=cv.getContext('2d');
   const img=new ImageData(new Uint8ClampedArray(baseData.data),SIZE,SIZE);
   const D=img.data;
-  if(ui.invert)for(let i=0;i<N;i++){D[i*4]=255-D[i*4];D[i*4+1]=255-D[i*4+1];D[i*4+2]=255-D[i*4+2];}
+  const bc=(ui.bright!==0||ui.contrast!==0);
+  for(let i=0;i<N;i++){let r=D[i*4],g=D[i*4+1],b=D[i*4+2];
+    if(bc){r=applyBC(r);g=applyBC(g);b=applyBC(b);}
+    if(ui.invert){r=255-r;g=255-g;b=255-b;}
+    D[i*4]=r;D[i*4+1]=g;D[i*4+2]=b;}
   if(hasResult){
     const op=ui.op;
     const blend=(i,cr,cg,cb,a)=>{const k=i*4;D[k]=D[k]*(1-a)+cr*a;D[k+1]=D[k+1]*(1-a)+cg*a;D[k+2]=D[k+2]*(1-a)+cb*a;};
+    const LR=34,LG=211,LB=238, HR=251,HG=113,HB=133;
     if(ui.heat){
       for(let i=0;i<N;i++){
-        if(ui.lung){const p=lungP[i];if(p>0.12)blend(i,56,189,248,op*p);}
-        if(ui.heart){const p=heartP[i];if(p>0.12)blend(i,251,113,133,op*p);}
+        if(ui.lung){const p=lungP[i];if(p>0.12)blend(i,LR,LG,LB,op*p);}
+        if(ui.heart){const p=heartP[i];if(p>0.12)blend(i,HR,HG,HB,op*p);}
       }
     }else{
       const lm=ui.lung?bin(lungP):null, hm=ui.heart?bin(heartP):null;
       if(ui.mode==='contour'){
         const lb=lm?boundary(lm):null, hb=hm?boundary(hm):null;
-        for(let i=0;i<N;i++){if(lb&&lb[i])blend(i,56,189,248,Math.min(1,op+.35));if(hb&&hb[i])blend(i,251,113,133,Math.min(1,op+.35));}
+        for(let i=0;i<N;i++){if(lb&&lb[i])blend(i,LR,LG,LB,Math.min(1,op+.35));if(hb&&hb[i])blend(i,HR,HG,HB,Math.min(1,op+.35));}
       }else{
-        for(let i=0;i<N;i++){if(lm&&lm[i])blend(i,56,189,248,op*.75);if(hm&&hm[i])blend(i,251,113,133,op*.8);}
+        for(let i=0;i<N;i++){if(lm&&lm[i])blend(i,LR,LG,LB,op*.72);if(hm&&hm[i])blend(i,HR,HG,HB,op*.8);}
       }
     }
+    if(ui.unc){for(let i=0;i<N;i++){
+      const pl=lungP[i],ph=heartP[i];
+      if((ui.lung&&pl>0.35&&pl<0.65)||(ui.heart&&ph>0.35&&ph<0.65))blend(i,251,191,36,Math.min(.85,op+.2));}}
   }
   ctx.putImageData(img,0,0);
+  if(hasResult&&ui.measure&&meas){
+    ctx.lineWidth=2;ctx.font='bold 15px -apple-system,Segoe UI,Roboto,sans-serif';ctx.textBaseline='bottom';
+    const T=meas.thoracic,C=meas.cardiac;
+    ctx.strokeStyle='#22d3ee';ctx.fillStyle='#22d3ee';
+    line(ctx,T.lo,T.row,T.hi,T.row);tick(ctx,T.lo,T.row);tick(ctx,T.hi,T.row);
+    ctx.strokeStyle='#fb7185';ctx.fillStyle='#fb7185';
+    line(ctx,C.lo,C.row,C.hi,C.row);tick(ctx,C.lo,C.row);tick(ctx,C.hi,C.row);
+  }
+}
+function line(ctx,x0,y0,x1,y1){ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();}
+function tick(ctx,x,y){ctx.beginPath();ctx.moveTo(x,y-7);ctx.lineTo(x,y+7);ctx.stroke();}
+
+function applyTransform(){
+  els('view').style.transform=`translate(${ui.panx}px,${ui.pany}px) scale(${ui.zoom})`;
+  const z=Math.round(ui.zoom*100);els('zpill').textContent=z+'%';
+  els('zpill').style.display=(ui.zoom!==1||ui.panx||ui.pany)?'block':'none';
 }
 function updateConf(){
+  if(!hasResult)return;
   const lm=bin(lungP),hm=bin(heartP);let ls=0,ln=0,hs=0,hn=0;
   for(let i=0;i<N;i++){if(lm[i]){ls+=lungP[i];ln++;}if(hm[i]){hs+=heartP[i];hn++;}}
-  els('conf').textContent=STR.conf[lang]((ln?ls/ln*100:0).toFixed(0),(hn?hs/hn*100:0).toFixed(0));
+  const lv=ln?Math.round(ls/ln*100):0, hv=hn?Math.round(hs/hn*100):0;
+  els('cvL').textContent=lv+'%';els('cvH').textContent=hv+'%';
+  els('cfL').style.width=lv+'%';els('cfH').style.width=hv+'%';
 }
 function updateResults(){
   const lm=bin(lungP),hm=bin(heartP);
-  const tw=widthOf(lm),cw=widthOf(hm),ctr=tw?cw/tw:0;
-  els('ctr').textContent=ctr?ctr.toFixed(2):'—';
-  const pct=Math.min(100,ctr/0.75*100);
-  els('gfill').style.width=pct+'%'; els('gmark').style.left=pct+'%';
+  const T=widthInfo(lm),C=widthInfo(hm);meas={thoracic:T,cardiac:C};
+  const ctr=T.w?C.w/T.w:0;
+  els('ctr').innerHTML=ctr?ctr.toFixed(2)+'<small>PA ref 0.50</small>':'—';
+  const pct=Math.min(100,ctr/0.75*100);els('gmark').style.left=pct+'%';
   let la=0,ha=0;for(let i=0;i<N;i++){la+=lm[i];ha+=hm[i];}
   els('lungpx').textContent=(la/N*100).toFixed(1)+'%';
   els('heartpx').textContent=(ha/N*100).toFixed(1)+'%';
   updateConf();
 }
+function areaOf(m){let a=0;for(let i=0;i<N;i++)a+=m[i];return a;}
+function vExtent(m){let top=-1,bot=-1;for(let r=0;r<SIZE;r++){const o=r*SIZE;let any=false;
+  for(let c=0;c<SIZE;c++)if(m[o+c]){any=true;break;}if(any){if(top<0)top=r;bot=r;}}return top<0?0:(bot-top+1);}
+function centroidX(m){let sx=0,n=0;for(let i=0;i<N;i++)if(m[i]){sx+=i%SIZE;n++;}return n?sx/n:0;}
+function updateBiomarkers(){
+  if(!leftP||!rightP){els('biopanel').style.display='none';return;}
+  const lm=bin(lungP),hm=bin(heartP),lL=bin(leftP),lR=bin(rightP);
+  const aL=areaOf(lL),aR=areaOf(lR),aLung=areaOf(lm),aHeart=areaOf(hm);
+  const areaCTR=aLung?aHeart/aLung:0;
+  els('bAreaCTR').textContent=areaCTR?areaCTR.toFixed(2):'—';
+  const asym=(aL+aR)?Math.abs(aL-aR)/(aL+aR):1;            // 0 = perfectly symmetric
+  els('bSym').textContent=((1-asym)*100).toFixed(0)+'%';
+  const cover=vExtent(lm)/SIZE;                             // lung field height / image
+  els('bCover').textContent=(cover*100).toFixed(0)+'%';
+  const off=aLung?Math.abs(centroidX(hm)-centroidX(lm))/SIZE:0;  // mediastinum vs lung midline
+  els('bCenter').textContent=(off*100).toFixed(1)+'%';
+  const checks=[
+    {k:'adq_sym',   ok:asym<0.15},
+    {k:'adq_cover', ok:cover>0.55},
+    {k:'adq_center',ok:off<0.06}
+  ];
+  els('adqlist').innerHTML=checks.map(c=>
+    `<div class="cbar"><span style="min-width:120px;color:var(--muted)">${I18N[c.k][lang]}</span>`+
+    `<span style="flex:1"></span>`+
+    `<span class="adqbadge ${c.ok?'ok':'warn'}">${c.ok?I18N.adq_ok[lang]:I18N.adq_rev[lang]}</span></div>`).join('');
+  els('biopanel').style.display='block';
+}
+async function fetchModel(url,sizeMB){
+  try{
+    const cache=await caches.open(CACHE_NAME);
+    const hit=await cache.match(url);
+    if(hit){setStatus(STR.cache[lang]);els('progbar').style.width='100%';return await hit.arrayBuffer();}
+    setStatus(STR.dl[lang]('0',String(sizeMB)));
+    const resp=await fetch(url);
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const total=+resp.headers.get('content-length')||sizeMB*1e6;
+    const reader=resp.clone().body.getReader(),chunks=[];let got=0;
+    for(;;){const{done,value}=await reader.read();if(done)break;chunks.push(value);got+=value.length;
+      els('progbar').style.width=Math.min(100,got/total*100)+'%';setStatus(STR.dl[lang]((got/1e6).toFixed(1),(total/1e6).toFixed(0)));}
+    try{await cache.put(url,resp);}catch(_){}
+    const u=new Uint8Array(got);let o=0;for(const ch of chunks){u.set(ch,o);o+=ch.length;}return u.buffer;
+  }catch(e){
+    if(String(e.message).startsWith('HTTP'))throw e;      // real 404 → let caller fall back
+    const resp=await fetch(url);if(!resp.ok)throw new Error('HTTP '+resp.status);return await resp.arrayBuffer();
+  }
+}
 async function loadModel(){
   if(session)return session; els('prog').style.display='block';
-  const resp=await fetch(MODEL_URL),total=+resp.headers.get('content-length')||263e6;
-  const reader=resp.body.getReader(),chunks=[];let got=0;
-  for(;;){const{done,value}=await reader.read();if(done)break;chunks.push(value);got+=value.length;
-    els('progbar').style.width=Math.min(100,got/total*100)+'%';setStatus(STR.dl[lang]((got/1e6).toFixed(1),(total/1e6).toFixed(0)));}
-  const buf=new Uint8Array(got);let o=0;for(const ch of chunks){buf.set(ch,o);o+=ch.length;}
-  setStatus(STR.init[lang]); session=await ort.InferenceSession.create(buf.buffer,{executionProviders:['wasm']});
+  let buf=null;
+  try{ buf=await fetchModel(MODEL_URL_FP16,131); }         // prefer fp16 (~131 MB, numerically ≈ fp32)
+  catch(_){ setStatus(STR.fallback[lang]); buf=await fetchModel(MODEL_URL_FP32,263); }  // fp16 not uploaded yet → fp32
+  setStatus(STR.init[lang]); session=await ort.InferenceSession.create(buf,{executionProviders:['wasm']});
   els('prog').style.display='none'; return session;
 }
 async function run(){
@@ -399,43 +720,129 @@ async function run(){
   try{
     const s=await loadModel(); setStatus(STR.running[lang]); const t0=performance.now();
     const res=await s.run({input:preprocess()}); const out=(res.prob||res[Object.keys(res)[0]]).data;
-    lungP=new Float32Array(N);heartP=new Float32Array(N);
-    for(let i=0;i<N;i++){lungP[i]=Math.max(out[i],out[N+i]);heartP[i]=out[2*N+i];}
-    hasResult=true; updateResults(); render(); els('download').disabled=false;
+    lungP=new Float32Array(N);heartP=new Float32Array(N);leftP=new Float32Array(N);rightP=new Float32Array(N);
+    for(let i=0;i<N;i++){leftP[i]=out[i];rightP[i]=out[N+i];lungP[i]=Math.max(out[i],out[N+i]);heartP[i]=out[2*N+i];}
+    hasResult=true; els('legend').classList.remove('hide'); els('vstate').style.display='inline-block';
+    updateResults(); updateBiomarkers(); render(); els('download').disabled=false;
     setStatus(STR.done[lang](((performance.now()-t0)/1000).toFixed(1)));
   }catch(e){setStatus(STR.failRun[lang]+e.message);console.error(e);}
   els('run').disabled=false;
 }
+function resetResultUI(){
+  els('ctr').textContent='—';els('lungpx').textContent='—';els('heartpx').textContent='—';els('gmark').style.left='0';
+  els('cvL').textContent='—';els('cvH').textContent='—';els('cfL').style.width='0';els('cfH').style.width='0';
+  els('legend').classList.add('hide');els('vstate').style.display='none';
+  els('biopanel').style.display='none';leftP=null;rightP=null;
+}
 function loadURL(url,name){const img=new Image();
-  img.onload=()=>{srcImg=img;hasResult=false;els('download').disabled=true;loadImageToBase(img);render();
+  img.onload=()=>{srcImg=img;hasResult=false;meas=null;els('download').disabled=true;
+    ui.zoom=1;ui.panx=0;ui.pany=0;applyTransform();
+    loadImageToBase(img);render();
     els('empty').style.display='none';els('vname').textContent=name||'image';els('run').disabled=false;setStatus(STR.loaded[lang]);
-    els('ctr').textContent='—';els('lungpx').textContent='—';els('heartpx').textContent='—';els('gfill').style.width='0';els('gmark').style.left='0';
-    els('conf').textContent=I18N.r_confhint[lang];};
+    resetResultUI();};
   img.onerror=()=>setStatus(STR.failImg[lang]);img.src=url;}
 
-// wiring
 els('langtoggle').onclick=()=>applyLang(lang==='zh'?'en':'zh');
 els('uptile').onclick=()=>els('file').click();
 els('file').onchange=e=>{const f=e.target.files[0];if(f)loadURL(URL.createObjectURL(f),f.name);};
-const SAMPLES=['sample1.png','sample2.png'];  // 要多幾張:把檔名加進這個陣列,並把圖丟進 web/samples/
+const SAMPLES=['sample1.png','sample2.png'];
 SAMPLES.forEach((s,i)=>{const b=document.createElement('button');b.className='thumb';
-  const im=document.createElement('img');im.src='samples/'+s;im.alt='';im.onerror=()=>{b.textContent='JSRT '+(i+1);};
+  const im=document.createElement('img');im.src='samples/'+s;im.alt='';im.onerror=()=>{b.textContent='CXR '+(i+1);};
   b.appendChild(im);b.onclick=()=>loadURL('samples/'+s,s);els('thumbslot').appendChild(b);});
-const stage=document.querySelector('.stage');
-['dragover','dragleave','drop'].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();
-  if(ev==='drop'&&e.dataTransfer.files[0]){const f=e.dataTransfer.files[0];loadURL(URL.createObjectURL(f),f.name);}}));
+
+const sw=els('stagewrap');
+['dragover','dragenter'].forEach(ev=>sw.addEventListener(ev,e=>{e.preventDefault();sw.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>sw.addEventListener(ev,e=>{e.preventDefault();if(ev!=='dragover')sw.classList.remove('drag');}));
+sw.addEventListener('drop',e=>{e.preventDefault();sw.classList.remove('drag');
+  if(e.dataTransfer.files[0])loadURL(URL.createObjectURL(e.dataTransfer.files[0]),e.dataTransfer.files[0].name);});
+
+const stage=els('stage');let dragging=false,sx=0,sy=0;
+stage.addEventListener('mousedown',e=>{if(ui.zoom<=1)return;dragging=true;sx=e.clientX-ui.panx;sy=e.clientY-ui.pany;stage.classList.add('grabbing');});
+window.addEventListener('mousemove',e=>{if(!dragging)return;ui.panx=e.clientX-sx;ui.pany=e.clientY-sy;applyTransform();});
+window.addEventListener('mouseup',()=>{dragging=false;stage.classList.remove('grabbing');});
+
 els('run').onclick=run;
 els('opacity').oninput=e=>{ui.op=e.target.value/100;render();};
-els('invert').onclick=()=>{ui.invert=!ui.invert;els('invert').classList.toggle('on',ui.invert);render();};
-els('reset').onclick=()=>{ui={op:.55,lung:true,heart:true,mode:'fill',heat:false,invert:false};
-  els('opacity').value=55;els('invert').classList.remove('on');els('tHeat').classList.remove('on');
-  els('tLung').classList.add('on');els('tHeart').classList.add('on');els('mFill').classList.add('on');els('mContour').classList.remove('on');render();};
+els('bright').oninput=e=>{ui.bright=+e.target.value;render();};
+els('contrast').oninput=e=>{ui.contrast=+e.target.value;render();};
+els('tInvert').onclick=()=>{ui.invert=!ui.invert;els('tInvert').classList.toggle('on',ui.invert);render();};
+els('tMeasure').onclick=()=>{ui.measure=!ui.measure;els('tMeasure').classList.toggle('on',ui.measure);render();};
+els('tZin').onclick=()=>{ui.zoom=Math.min(4,ui.zoom*1.25);applyTransform();};
+els('tZout').onclick=()=>{ui.zoom=Math.max(1,ui.zoom/1.25);if(ui.zoom===1){ui.panx=0;ui.pany=0;}applyTransform();};
+els('tReset').onclick=()=>{ui={op:.55,bright:0,contrast:0,lung:true,heart:true,mode:'fill',heat:false,unc:false,invert:false,measure:false,zoom:1,panx:0,pany:0};
+  els('opacity').value=55;els('bright').value=0;els('contrast').value=0;
+  els('tInvert').classList.remove('on');els('tMeasure').classList.remove('on');
+  els('tHeat').classList.remove('on');els('tUnc').classList.remove('on');
+  els('tLung').classList.add('on');els('tHeart').classList.add('on');els('mFill').classList.add('on');els('mContour').classList.remove('on');
+  applyTransform();render();};
 els('tLung').onclick=()=>{ui.lung=!ui.lung;els('tLung').classList.toggle('on',ui.lung);render();};
 els('tHeart').onclick=()=>{ui.heart=!ui.heart;els('tHeart').classList.toggle('on',ui.heart);render();};
 els('tHeat').onclick=()=>{ui.heat=!ui.heat;els('tHeat').classList.toggle('on',ui.heat);render();};
+els('tUnc').onclick=()=>{ui.unc=!ui.unc;els('tUnc').classList.toggle('on',ui.unc);render();};
 els('mFill').onclick=()=>{ui.mode='fill';els('mFill').classList.add('on');els('mContour').classList.remove('on');render();};
 els('mContour').onclick=()=>{ui.mode='contour';els('mContour').classList.add('on');els('mFill').classList.remove('on');render();};
 els('download').onclick=()=>{const a=document.createElement('a');a.download='cxrseg_overlay.png';a.href=els('view').toDataURL('image/png');a.click();};
+
+let cmpPriorBase=null, cmpCurBase=null;
+const setCmpStatus=t=>els('cmpStatus').textContent=t;
+function fileToBase(file,cb){const img=new Image();
+  img.onload=()=>{const off=document.createElement('canvas');off.width=SIZE;off.height=SIZE;const c=off.getContext('2d');
+    c.fillStyle='#000';c.fillRect(0,0,SIZE,SIZE);c.drawImage(img,0,0,SIZE,SIZE);
+    cb(c.getImageData(0,0,SIZE,SIZE));URL.revokeObjectURL(img.src);};
+  img.onerror=()=>setCmpStatus(STR.failImg[lang]);img.src=URL.createObjectURL(file);}
+function drawCmp(canvasId,base,res){
+  const ctx=els(canvasId).getContext('2d');
+  const img=new ImageData(new Uint8ClampedArray(base.data),SIZE,SIZE);const D=img.data;
+  if(res){const lb=boundary(res.lm),hb=boundary(res.hm);
+    for(let i=0;i<N;i++){const k=i*4;if(lb[i]){D[k]=34;D[k+1]=211;D[k+2]=238;}if(hb[i]){D[k]=251;D[k+1]=113;D[k+2]=133;}}}
+  ctx.putImageData(img,0,0);}
+function preprocessFrom(base){const x=new Float32Array(N),d=base.data;
+  for(let i=0;i<N;i++){const g=(d[i*4]+d[i*4+1]+d[i*4+2])/3;x[i]=(g/255*2-1)*1024;}
+  return new ort.Tensor('float32',x,[1,1,SIZE,SIZE]);}
+async function inferMetrics(base){
+  const s=await loadModel();
+  const res=await s.run({input:preprocessFrom(base)});const out=(res.prob||res[Object.keys(res)[0]]).data;
+  const lp=new Float32Array(N),hp=new Float32Array(N);
+  for(let i=0;i<N;i++){lp[i]=Math.max(out[i],out[N+i]);hp[i]=out[2*N+i];}
+  const lm=bin(lp),hm=bin(hp),T=widthInfo(lm),C=widthInfo(hm);
+  return {lm,hm,ctr:T.w?C.w/T.w:0,harea:areaOf(hm)/N*100,larea:areaOf(lm)/N*100};}
+function deltaCell(id,dv,digits,unit){
+  const eps=digits===2?0.005:0.05;
+  const cls=Math.abs(dv)<eps?'':(dv>0?'dup':'ddown');
+  const arrow=Math.abs(dv)<eps?'→':(dv>0?'↑':'↓');
+  const s=dv>0?'+':'';
+  els(id).innerHTML=`<span class="${cls}">${arrow} ${s}${dv.toFixed(digits)}${unit}</span>`;}
+async function runCompare(){
+  if(!cmpPriorBase||!cmpCurBase)return; els('cmpRun').disabled=true;
+  try{
+    setCmpStatus(STR.cmpwait[lang]);
+    const P=await inferMetrics(cmpPriorBase), Cu=await inferMetrics(cmpCurBase);
+    drawCmp('cmpPrior',cmpPriorBase,P); drawCmp('cmpCur',cmpCurBase,Cu);
+    els('cmpPT').style.display='inline-block';els('cmpPT').textContent='CTR '+P.ctr.toFixed(2);
+    els('cmpCT').style.display='inline-block';els('cmpCT').textContent='CTR '+Cu.ctr.toFixed(2);
+    els('dPCTR').textContent=P.ctr.toFixed(2);els('dCCTR').textContent=Cu.ctr.toFixed(2);deltaCell('dDCTR',Cu.ctr-P.ctr,2,'');
+    els('dPH').textContent=P.harea.toFixed(1)+'%';els('dCH').textContent=Cu.harea.toFixed(1)+'%';deltaCell('dDH',Cu.harea-P.harea,1,'%');
+    els('dPL').textContent=P.larea.toFixed(1)+'%';els('dCL').textContent=Cu.larea.toFixed(1)+'%';deltaCell('dDL',Cu.larea-P.larea,1,'%');
+    els('cmpTable').style.display='table'; setCmpStatus(STR.cmpdone[lang]);
+  }catch(e){setCmpStatus(STR.failRun[lang]+e.message);console.error(e);}
+  els('cmpRun').disabled=false;}
+function checkCmpReady(){els('cmpRun').disabled=!(cmpPriorBase&&cmpCurBase);}
+function wireSlot(wrapId,fileId,canvasId,emptyId,set){
+  const wrap=els(wrapId);
+  const handle=f=>fileToBase(f,b=>{set(b);drawCmp(canvasId,b,null);els(emptyId).style.display='none';checkCmpReady();});
+  els(fileId).onchange=e=>{const f=e.target.files[0];if(f)handle(f);};
+  wrap.onclick=()=>els(fileId).click();
+  ['dragover','dragenter'].forEach(ev=>wrap.addEventListener(ev,e=>e.preventDefault()));
+  wrap.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handle(e.dataTransfer.files[0]);});}
+wireSlot('cmpPriorWrap','cmpPriorFile','cmpPrior','cmpPriorEmpty',b=>cmpPriorBase=b);
+wireSlot('cmpCurWrap','cmpCurFile','cmpCur','cmpCurEmpty',b=>cmpCurBase=b);
+els('cmpRun').onclick=runCompare;
+
+const modal=els('modal');
+if(!localStorage.getItem('cxrseg_seen')) modal.classList.add('show');
+els('modalok').onclick=()=>{modal.classList.remove('show');localStorage.setItem('cxrseg_seen','1');};
+modal.addEventListener('click',e=>{if(e.target===modal){modal.classList.remove('show');localStorage.setItem('cxrseg_seen','1');}});
+
 applyLang(lang);
 </script>
 </body>
