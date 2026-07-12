@@ -107,6 +107,15 @@
   .histpanel canvas{width:100%;height:66px;display:block}
   .histaxis{display:flex;justify-content:space-between;font-size:10px;color:var(--viewer-muted);margin-top:3px}
   .histnote{font-size:10.5px;color:var(--viewer-muted);margin-top:6px;line-height:1.5}
+  .summary{background:#eafaf6;border:1px solid #bfe9dd;border-radius:14px;padding:14px;font-size:12.5px;line-height:1.6;color:var(--ink)}
+  .summary b{color:var(--accent-ink)}
+  .glossary{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--panel)}
+  .glossary summary{font-size:13px;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  .glossary summary::-webkit-details-marker{display:none}
+  .glossary summary::after{content:"⌄";color:var(--muted);font-size:14px}
+  .glossary[open] summary::after{content:"⌃"}
+  .gldef{font-size:12px;color:var(--muted);line-height:1.7;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+  .gldef b{color:var(--ink)}
   .viewer .controls{border-color:var(--viewer-line);margin-top:6px}
   .viewer .ctitle,.viewer .crow .cl{color:var(--viewer-muted)}
   .viewer .tgl{background:var(--viewer-2);border-color:var(--viewer-line);color:var(--viewer-ink)}
@@ -367,6 +376,8 @@
           <div class="confttl" style="margin-bottom:10px;display:flex;justify-content:space-between">
             <span data-i18n="bio_ttl">幾何量測(全部非診斷)</span></div>
           <div class="rrow" style="border-top:none"><span class="rk" data-i18n="bio_areactr">面積 CTR(心/胸面積)</span><span class="rv" id="bAreaCTR">—</span></div>
+          <div class="rrow"><span class="rk" data-i18n="bio_left">左肺面積</span><span class="rv" id="bLeft">—</span></div>
+          <div class="rrow"><span class="rk" data-i18n="bio_right">右肺面積</span><span class="rv" id="bRight">—</span></div>
           <div class="rrow"><span class="rk" data-i18n="bio_sym">左右肺對稱</span><span class="rv" id="bSym">—</span></div>
           <div class="rrow"><span class="rk" data-i18n="bio_cover">肺野縱向覆蓋</span><span class="rv" id="bCover">—</span></div>
           <div class="rrow"><span class="rk" data-i18n="bio_center">縱膈置中偏移</span><span class="rv" id="bCenter">—</span></div>
@@ -376,6 +387,13 @@
             <div class="confhint" data-i18n="adq_hint">僅為幾何代理,非正式拍攝品質評估;CTR 只在適足的 PA 立位片上有意義。</div>
           </div>
         </div>
+
+        <div class="summary" id="summarypanel" style="display:none"><div id="summarytext"></div></div>
+
+        <details class="glossary">
+          <summary data-i18n="gl_ttl">這些數字是什麼意思?</summary>
+          <div class="gldef" data-i18n="gl_body"><b>CTR</b> 心臟最大橫寬 ÷ 胸廓最大內寬。<br><b>面積 %</b> 遮罩像素佔整張影像比例。<br><b>對稱</b> 左右肺面積接近程度(100%=完全對稱)。<br><b>覆蓋</b> 肺野在垂直方向的延伸範圍。<br><b>置中偏移</b> 心臟中心相對肺中線的水平偏移。</div>
+        </details>
 
       </div>
     </div>
@@ -516,6 +534,9 @@ const I18N = {
   adq_ok:{zh:"通過",en:"OK"}, adq_rev:{zh:"建議檢視",en:"Review"},
   hist_ttl:{zh:"像素強度",en:"Pixel intensity"},
   hist_note:{zh:"左峰=背景/暗區,右側=軟組織與骨骼;青色範圍=目前顯示窗。",en:"Left peak = dark background; right = soft tissue & bone. Cyan band = current display window."},
+  bio_left:{zh:"左肺面積",en:"Left lung area"}, bio_right:{zh:"右肺面積",en:"Right lung area"},
+  gl_ttl:{zh:"這些數字是什麼意思?",en:"What do these numbers mean?"},
+  gl_body:{zh:"<b>CTR</b> 心臟最大橫寬 ÷ 胸廓最大內寬。<br><b>面積 %</b> 遮罩像素佔整張影像比例。<br><b>對稱</b> 左右肺面積接近程度(100%=完全對稱)。<br><b>覆蓋</b> 肺野在垂直方向的延伸範圍。<br><b>置中偏移</b> 心臟中心相對肺中線的水平偏移。",en:"<b>CTR</b> max cardiac width ÷ max internal thoracic width.<br><b>Area %</b> mask pixels as a share of the whole image.<br><b>Symmetry</b> how close the two lung areas are (100% = identical).<br><b>Coverage</b> vertical extent of the lung fields.<br><b>Centering offset</b> horizontal shift of the heart center vs the lung midline."},
   nav_cmp:{zh:"比較",en:"Compare"},
   cmp_h2:{zh:"縱向比較(前後片)",en:"Longitudinal comparison (prior vs current)"},
   cmp_note:{zh:'臨床上單一 CTR 的意義有限,真正重要的是「隨時間的變化」。載入同一位對象的舊片與新片,比較幾何量測的區間變化(interval change)。非診斷。',en:"A single CTR says little; what matters clinically is change over time. Load the same subject's prior and current films to compare the geometric interval change. Non-diagnostic."},
@@ -571,6 +592,7 @@ const STR={
   fallback:{zh:"fp16 無法取得,改用 fp32…",en:"fp16 unavailable — falling back to fp32…"},
   cmpwait:{zh:"分割兩張中…(本機運算)",en:"Segmenting both… (on-device)"},
   cmpdone:{zh:"完成 · 幾何區間變化 · 非診斷",en:"Done · geometric interval change · non-diagnostic"},
+  summary:{zh:(ctr,sym,rev)=>`已分割肺野與心臟。幾何 CTR <b>${ctr}</b>(PA 參考 0.50);左右肺對稱 ${sym}%。適足性:${rev===0?"全部通過":rev+" 項建議檢視"}。<span style="color:var(--muted)">此為幾何量測,非診斷。</span>`,en:(ctr,sym,rev)=>`Lungs and heart segmented. Geometric CTR <b>${ctr}</b> (PA ref 0.50); L/R lung symmetry ${sym}%. Adequacy: ${rev===0?"all OK":rev+" to review"}. <span style="color:var(--muted)">Geometric measurement, non-diagnostic.</span>`},
   running:{zh:"分割中…(本機運算,可能數秒)",en:"Segmenting… (on-device, may take seconds)"},
   failRun:{zh:"推論失敗:",en:"Inference failed: "}, failImg:{zh:"載入影像失敗",en:"Failed to load image"},
   dl:{zh:(a,b)=>`下載模型 ${a}/${b} MB…`,en:(a,b)=>`Downloading model ${a}/${b} MB…`},
@@ -708,6 +730,11 @@ function updateBiomarkers(){
     `<div class="cbar"><span style="min-width:120px;color:var(--muted)">${I18N[c.k][lang]}</span>`+
     `<span style="flex:1"></span>`+
     `<span class="adqbadge ${c.ok?'ok':'warn'}">${c.ok?I18N.adq_ok[lang]:I18N.adq_rev[lang]}</span></div>`).join('');
+  els('bLeft').textContent=(aL/N*100).toFixed(1)+'%';
+  els('bRight').textContent=(aR/N*100).toFixed(1)+'%';
+  const T2=widthInfo(lm),C2=widthInfo(hm),ctrW=T2.w?C2.w/T2.w:0,rev=checks.filter(c=>!c.ok).length;
+  els('summarytext').innerHTML=STR.summary[lang](ctrW.toFixed(2),((1-asym)*100).toFixed(0),rev);
+  els('summarypanel').style.display='block';
   els('biopanel').style.display='block';
 }
 function computeHist(){
@@ -773,7 +800,7 @@ function resetResultUI(){
   els('ctr').textContent='—';els('lungpx').textContent='—';els('heartpx').textContent='—';els('gmark').style.left='0';
   els('cvL').textContent='—';els('cvH').textContent='—';els('cfL').style.width='0';els('cfH').style.width='0';
   els('legend').classList.add('hide');els('vstate').style.display='none';
-  els('biopanel').style.display='none';leftP=null;rightP=null;
+  els('biopanel').style.display='none';els('summarypanel').style.display='none';leftP=null;rightP=null;
 }
 function loadURL(url,name){const img=new Image();
   img.onload=()=>{srcImg=img;hasResult=false;meas=null;els('download').disabled=true;
