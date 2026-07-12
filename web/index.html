@@ -101,6 +101,20 @@
   .thumb:hover{border-color:var(--accent)} .thumb img{width:100%;height:100%;object-fit:cover}
   .thumb.up{flex-direction:column;gap:2px;font-size:19px}
   .vnote{font-size:11px;color:var(--viewer-muted)}
+  .histpanel{border-top:1px solid var(--viewer-line);padding-top:10px;margin-top:2px}
+  .histhd{display:flex;justify-content:space-between;align-items:center;color:var(--viewer-muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+  .histwin{color:#7fe6d6;text-transform:none;letter-spacing:0}
+  .histpanel canvas{width:100%;height:66px;display:block}
+  .histaxis{display:flex;justify-content:space-between;font-size:10px;color:var(--viewer-muted);margin-top:3px}
+  .histnote{font-size:10.5px;color:var(--viewer-muted);margin-top:6px;line-height:1.5}
+  .viewer .controls{border-color:var(--viewer-line);margin-top:6px}
+  .viewer .ctitle,.viewer .crow .cl{color:var(--viewer-muted)}
+  .viewer .tgl{background:var(--viewer-2);border-color:var(--viewer-line);color:var(--viewer-ink)}
+  .viewer .tgl.on{background:#0e2b2a;border-color:var(--accent);color:#7fe6d6}
+  .viewer .seg{border-color:var(--viewer-line)}
+  .viewer .seg button{background:var(--viewer-2);color:var(--viewer-ink)}
+  .viewer .seg button.on{background:var(--accent);color:#fff}
+  .viewer .ctrnote{color:#d3a15c}
 
   /* ── panel ───────────────────────────────── */
   .panel{padding:18px 18px 20px;display:flex;flex-direction:column;gap:15px;min-width:0}
@@ -295,6 +309,34 @@
             <span id="thumbslot" style="display:contents"></span>
           </div>
           <div class="vnote" data-i18n="v_samplenote">範例僅供試用,不代表準確度;真實準度見下方外部驗證。</div>
+          <div class="histpanel" id="histpanel" style="display:none">
+            <div class="histhd"><span data-i18n="hist_ttl">像素強度</span><span class="histwin" id="histwin"></span></div>
+            <canvas id="hist" width="512" height="92"></canvas>
+            <div class="histaxis"><span>0</span><span>64</span><span>128</span><span>192</span><span>255</span></div>
+            <div class="histnote" data-i18n="hist_note">左峰=背景/暗區,右側=軟組織與骨骼;青色範圍=目前顯示窗。</div>
+          </div>
+          <div class="controls">
+            <div class="ctitle"><span data-i18n="ctl_title">顯示控制</span></div>
+            <div class="crow"><span class="cl" data-i18n="ctl_opacity">疊圖濃度</span>
+              <input type="range" id="opacity" min="0" max="100" value="55" step="1" /></div>
+            <div class="crow"><span class="cl" data-i18n="ctl_bright">亮度</span>
+              <input type="range" id="bright" min="-100" max="100" value="0" step="1" /></div>
+            <div class="crow"><span class="cl" data-i18n="ctl_contrast">對比</span>
+              <input type="range" id="contrast" min="-100" max="100" value="0" step="1" /></div>
+            <div class="crow"><span class="cl" data-i18n="ctl_show">顯示</span>
+              <div class="chipset">
+                <button class="tgl on" id="tLung"><span class="sw" style="background:var(--lung)"></span><span data-i18n="ctl_lung">肺</span></button>
+                <button class="tgl on" id="tHeart"><span class="sw" style="background:var(--heart)"></span><span data-i18n="ctl_heart">心</span></button>
+              </div></div>
+            <div class="crow"><span class="cl" data-i18n="ctl_style">樣式</span>
+              <div class="seg"><button id="mFill" class="on" data-i18n="ctl_fill">填滿</button><button id="mContour" data-i18n="ctl_contour">輪廓</button></div></div>
+            <div class="crow"><span class="cl" data-i18n="ctl_map">機率</span>
+              <div class="chipset">
+                <button class="tgl" id="tHeat"><span data-i18n="ctl_heat">熱圖</span></button>
+                <button class="tgl" id="tUnc"><span data-i18n="ctl_unc">不確定帶</span></button>
+              </div></div>
+            <div class="ctrnote" data-i18n="ctrnote">CTR 為幾何量測、非診斷。0.50 是 PA 片參考;AP/portable 會放大心影。</div>
+          </div>
         </div>
       </div>
       <!-- panel -->
@@ -335,28 +377,6 @@
           </div>
         </div>
 
-        <div class="controls">
-          <div class="ctitle"><span data-i18n="ctl_title">顯示控制</span></div>
-          <div class="crow"><span class="cl" data-i18n="ctl_opacity">疊圖濃度</span>
-            <input type="range" id="opacity" min="0" max="100" value="55" step="1" /></div>
-          <div class="crow"><span class="cl" data-i18n="ctl_bright">亮度</span>
-            <input type="range" id="bright" min="-100" max="100" value="0" step="1" /></div>
-          <div class="crow"><span class="cl" data-i18n="ctl_contrast">對比</span>
-            <input type="range" id="contrast" min="-100" max="100" value="0" step="1" /></div>
-          <div class="crow"><span class="cl" data-i18n="ctl_show">顯示</span>
-            <div class="chipset">
-              <button class="tgl on" id="tLung"><span class="sw" style="background:var(--lung)"></span><span data-i18n="ctl_lung">肺</span></button>
-              <button class="tgl on" id="tHeart"><span class="sw" style="background:var(--heart)"></span><span data-i18n="ctl_heart">心</span></button>
-            </div></div>
-          <div class="crow"><span class="cl" data-i18n="ctl_style">樣式</span>
-            <div class="seg"><button id="mFill" class="on" data-i18n="ctl_fill">填滿</button><button id="mContour" data-i18n="ctl_contour">輪廓</button></div></div>
-          <div class="crow"><span class="cl" data-i18n="ctl_map">機率</span>
-            <div class="chipset">
-              <button class="tgl" id="tHeat"><span data-i18n="ctl_heat">熱圖</span></button>
-              <button class="tgl" id="tUnc"><span data-i18n="ctl_unc">不確定帶</span></button>
-            </div></div>
-          <div class="ctrnote" data-i18n="ctrnote">CTR 為幾何量測、非診斷。0.50 是 PA 片參考;AP/portable 會放大心影。</div>
-        </div>
       </div>
     </div>
   </section>
@@ -494,6 +514,8 @@ const I18N = {
   adq_cover:{zh:"吸氣 / 覆蓋充足",en:"Inspiration / coverage"},
   adq_center:{zh:"縱膈置中",en:"Mediastinum centered"},
   adq_ok:{zh:"通過",en:"OK"}, adq_rev:{zh:"建議檢視",en:"Review"},
+  hist_ttl:{zh:"像素強度",en:"Pixel intensity"},
+  hist_note:{zh:"左峰=背景/暗區,右側=軟組織與骨骼;青色範圍=目前顯示窗。",en:"Left peak = dark background; right = soft tissue & bone. Cyan band = current display window."},
   nav_cmp:{zh:"比較",en:"Compare"},
   cmp_h2:{zh:"縱向比較(前後片)",en:"Longitudinal comparison (prior vs current)"},
   cmp_note:{zh:'臨床上單一 CTR 的意義有限,真正重要的是「隨時間的變化」。載入同一位對象的舊片與新片,比較幾何量測的區間變化(interval change)。非診斷。',en:"A single CTR says little; what matters clinically is change over time. Load the same subject's prior and current films to compare the geometric interval change. Non-diagnostic."},
@@ -688,6 +710,25 @@ function updateBiomarkers(){
     `<span class="adqbadge ${c.ok?'ok':'warn'}">${c.ok?I18N.adq_ok[lang]:I18N.adq_rev[lang]}</span></div>`).join('');
   els('biopanel').style.display='block';
 }
+function computeHist(){
+  const h=new Uint32Array(256),d=baseData.data;
+  for(let i=0;i<N;i++){let g=(d[i*4]+d[i*4+1]+d[i*4+2])/3|0;if(g<0)g=0;if(g>255)g=255;h[g]++;}
+  return h;}
+function drawHist(){
+  const cv=els('hist');if(!cv||!baseData)return;
+  els('histpanel').style.display='block';
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;ctx.clearRect(0,0,W,H);
+  const h=computeHist();let max=0;for(let i=0;i<256;i++){const v=Math.log1p(h[i]);if(v>max)max=v;}
+  const c=(ui.contrast/100)*1.6,f=(259*(c*255+255))/(255*(259-c*255));
+  let lo=128+(0-128-ui.bright*1.28)/f,hi=128+(255-128-ui.bright*1.28)/f;
+  lo=Math.max(0,Math.min(255,lo));hi=Math.max(0,Math.min(255,hi));if(hi<lo){const t=lo;lo=hi;hi=t;}
+  ctx.fillStyle='rgba(34,211,238,0.12)';ctx.fillRect(lo/255*W,0,(hi-lo)/255*W,H);
+  ctx.strokeStyle='rgba(34,211,238,0.55)';ctx.setLineDash([3,3]);ctx.beginPath();
+  ctx.moveTo(lo/255*W+0.5,0);ctx.lineTo(lo/255*W+0.5,H);ctx.moveTo(hi/255*W-0.5,0);ctx.lineTo(hi/255*W-0.5,H);ctx.stroke();ctx.setLineDash([]);
+  const bw=W/256;
+  for(let i=0;i<256;i++){const bh=max?Math.log1p(h[i])/max*(H-2):0;const x=i*bw;const inw=i>=lo&&i<=hi;
+    ctx.fillStyle=inw?'rgba(34,211,238,0.85)':'rgba(127,141,160,0.5)';ctx.fillRect(x,H-bh,bw+0.6,bh);}
+  els('histwin').textContent='window '+Math.round(lo)+'–'+Math.round(hi);}
 async function fetchModel(url,sizeMB){
   try{
     const cache=await caches.open(CACHE_NAME);
@@ -737,7 +778,7 @@ function resetResultUI(){
 function loadURL(url,name){const img=new Image();
   img.onload=()=>{srcImg=img;hasResult=false;meas=null;els('download').disabled=true;
     ui.zoom=1;ui.panx=0;ui.pany=0;applyTransform();
-    loadImageToBase(img);render();
+    loadImageToBase(img);render();drawHist();
     els('empty').style.display='none';els('vname').textContent=name||'image';els('run').disabled=false;setStatus(STR.loaded[lang]);
     resetResultUI();};
   img.onerror=()=>setStatus(STR.failImg[lang]);img.src=url;}
@@ -763,8 +804,8 @@ window.addEventListener('mouseup',()=>{dragging=false;stage.classList.remove('gr
 
 els('run').onclick=run;
 els('opacity').oninput=e=>{ui.op=e.target.value/100;render();};
-els('bright').oninput=e=>{ui.bright=+e.target.value;render();};
-els('contrast').oninput=e=>{ui.contrast=+e.target.value;render();};
+els('bright').oninput=e=>{ui.bright=+e.target.value;render();drawHist();};
+els('contrast').oninput=e=>{ui.contrast=+e.target.value;render();drawHist();};
 els('tInvert').onclick=()=>{ui.invert=!ui.invert;els('tInvert').classList.toggle('on',ui.invert);render();};
 els('tMeasure').onclick=()=>{ui.measure=!ui.measure;els('tMeasure').classList.toggle('on',ui.measure);render();};
 els('tZin').onclick=()=>{ui.zoom=Math.min(4,ui.zoom*1.25);applyTransform();};
@@ -774,7 +815,7 @@ els('tReset').onclick=()=>{ui={op:.55,bright:0,contrast:0,lung:true,heart:true,m
   els('tInvert').classList.remove('on');els('tMeasure').classList.remove('on');
   els('tHeat').classList.remove('on');els('tUnc').classList.remove('on');
   els('tLung').classList.add('on');els('tHeart').classList.add('on');els('mFill').classList.add('on');els('mContour').classList.remove('on');
-  applyTransform();render();};
+  applyTransform();render();drawHist();};
 els('tLung').onclick=()=>{ui.lung=!ui.lung;els('tLung').classList.toggle('on',ui.lung);render();};
 els('tHeart').onclick=()=>{ui.heart=!ui.heart;els('tHeart').classList.toggle('on',ui.heart);render();};
 els('tHeat').onclick=()=>{ui.heat=!ui.heat;els('tHeat').classList.toggle('on',ui.heat);render();};
