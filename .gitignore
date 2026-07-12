@@ -32,3 +32,7 @@ files/
 notebooks/
 report/
 kaggle results/
+
+# local media — 不上傳(圖片 / 影片)
+圖片/
+影片/
